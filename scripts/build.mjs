@@ -12,7 +12,7 @@ if(config.supabasePublishableKey.startsWith('sb_secret_'))throw new Error('Use a
 if(config.supabasePublishableKey.split('.').length===3){const claims=JSON.parse(Buffer.from(config.supabasePublishableKey.split('.')[1],'base64url').toString());if(claims.role!=='anon')throw new Error('Only the anon JWT may be published');}
 if(config.supabaseUrl&&new URL(config.supabaseUrl).protocol!=='https:')throw new Error('Supabase URL must use HTTPS');
 await rm('dist',{recursive:true,force:true});await mkdir('dist',{recursive:true});
-for(const f of ['style.css','assets'])await cp(f,`dist/${f}`,{recursive:true});
+for(const f of ['style.css','assets','counter-sw.js'])await cp(f,`dist/${f}`,{recursive:true});
 await build({entryPoints:['app.js'],bundle:true,format:'esm',outfile:'dist/app.js',minify:true});
 const posts=[];
 for(const f of (await readdir('posts')).filter(f=>f.endsWith('.json')).sort()){

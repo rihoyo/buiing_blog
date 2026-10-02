@@ -1,4 +1,48 @@
-// One shared counter across public blog pages. No keys or paid plan required.
+// Cache the external image in a service worker so reloads do not contact Hits.
+let setup;
+function prepareSessionCounter() {
+  if (setup) return setup;
+  setup = (async () => {
+    if (!('serviceWorker' in navigator) || !('caches' in window)) throw new Error('Storage unavailable');
+    const script = new URL('counter-sw.js', document.baseURI);
+    const scope = new URL('./', script).href;
+    const existing = await navigator.serviceWorker.getRegistration(scope);
+    const registration = existing || await navigator.serviceWorker.register(script.href, {scope});
+    // Do not send an image before this worker controls the page: the first load
+    // must also go through the session gate, not increment once outside it.
+    await navigator.serviceWorker.ready;
+    if (navigator.serviceWorker.controller?.scriptURL !== script.href) {
+      await new Promise((resolve, reject) => {
+        const finish = () => {
+          if (navigator.serviceWorker.controller?.scriptURL === script.href) {
+            clearTimeout(timer);
+            navigator.serviceWorker.removeEventListener('controllerchange', finish);
+            resolve();
+          }
+        };
+        const timer = setTimeout(() => {
+          navigator.serviceWorker.removeEventListener('controllerchange', finish);
+          reject(new Error('Counter worker unavailable'));
+        }, 10000);
+        navigator.serviceWorker.addEventListener('controllerchange', finish);
+        finish();
+      });
+    }
+    return registration;
+  })();
+  const attempt = setup;
+  setup = new Promise((resolve, reject) => {
+    const deadline = setTimeout(() => reject(new Error('Counter setup timed out')), 12000);
+    attempt.then(resolve, reject).finally(() => clearTimeout(deadline));
+  });
+  return setup;
+}
+// A restored back/forward-cache page is a visit too; pass it through the same gate.
+window.addEventListener('pageshow', event => {
+  if (!event.persisted) return;
+  document.getElementById('blog-view-counter')?.remove();
+  mountViewCounter();
+});
 export function mountViewCounter() {
   const slot = document.querySelector('[data-view-counter]');
   if (slot && !slot.querySelector('.view-count')) {
@@ -28,8 +72,13 @@ export function mountViewCounter() {
         target.title = '조회수를 잠시 확인할 수 없습니다.';
       }
     });
-    // A single stable key aggregates home, articles, about and community views.
-    badge.src = 'https://hits.sh/rihoyo.github.io/buiing_blog.svg?view=total&style=flat-square&label=&color=ffffff&labelColor=ffffff';
+    // One external request per 30-minute inactivity session, across all public pages.
+    void prepareSessionCounter().then(() => {
+      badge.src = 'https://hits.sh/rihoyo.github.io/buiing_blog.svg?view=total&style=flat-square&label=&color=ffffff&labelColor=ffffff';
+    }).catch(() => {
+      const target = document.querySelector('[data-view-counter]');
+      if (target) target.title = '브라우저 저장소를 사용할 수 없어 집계를 건너뛰었습니다.';
+    });
     const holder = document.createElement('div');
     holder.hidden = true;
     holder.append(badge);
