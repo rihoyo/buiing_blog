@@ -1,0 +1,40 @@
+{
+  "id": "javascript-event-loop",
+  "title": "자바스크립트는 어떻게 기다릴까?",
+  "category": "Development",
+  "excerpt": "비동기 코드를 이해하는 첫걸음. 이벤트 루프와 태스크 큐를 천천히 들여다봅니다.",
+  "date": "2026-09-20",
+  "art": "orb",
+  "tags": [
+    "JavaScript",
+    "Deep Dive"
+  ],
+  "minutes": 5,
+  "sample": true,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "setTimeout의 시간이 0이어도 콜백이 즉시 실행되지는 않습니다. 현재 실행 중인 동기 코드가 끝난 뒤 이벤트 루프가 실행 기회를 줍니다."
+    },
+    {
+      "type": "heading",
+      "text": "출력 순서를 먼저 예상해 보기"
+    },
+    {
+      "type": "code",
+      "text": "console.log('A');\nsetTimeout(() => console.log('B'), 0);\nPromise.resolve().then(() => console.log('C'));\nconsole.log('D');\n// A → D → C → B"
+    },
+    {
+      "type": "paragraph",
+      "text": "A와 D는 현재 태스크에서 실행됩니다. Promise의 콜백은 마이크로태스크 큐에 들어갑니다. 현재 태스크가 끝나면 마이크로태스크를 비우고, 이후 타이머 콜백이 실행될 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "기다림을 위임한다는 것"
+    },
+    {
+      "type": "paragraph",
+      "text": "네트워크 요청이나 타이머의 대기를 브라우저에 맡기는 동안 자바스크립트는 다른 작업을 처리할 수 있습니다. 하지만 오래 걸리는 동기 반복문은 여전히 메인 스레드를 막습니다. 무거운 연산은 분할하거나 Web Worker 사용을 고려해야 합니다."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+# BUIING
+
+블랙·화이트 기반 개인 IT 블로그. 블로그 글은 검색 가능한 정적 HTML로 배포하고, 방문자 게시판·댓글·관리 기능은 Supabase Auth/PostgreSQL로 운영합니다.
+
+**처음 설치·공개할 때는 [DEPLOYMENT.md](DEPLOYMENT.md)를 순서대로 진행하세요.** 사이트 공개, DB 설치, 로그인 메일, 관리자 지정, Google Search Console 등록을 안내합니다.
+
+## 실행
+
+Node.js 22 이상:
+
+```sh
+npm ci
+npm run dev
+```
+
+기본 주소: http://localhost:3000/buiing_blog/
+
+시작할 때 빌드합니다. 코드 변경 후에는 `npm run build`를 실행하고 브라우저를 새로고침하세요. 배포 결과물은 `dist/`, 공개 주소와 Supabase 공개 설정은 `site.config.json`에 있습니다. Supabase 미설정 상태에는 커뮤니티 준비 안내가 표시되며 저장 성공을 가장하지 않습니다.
+
+## 글 작성
+
+사이트의 **글쓰기**에서 제목·카테고리·태그·본문을 작성하고 이미지/GIF 또는 YouTube URL을 첨부합니다. 본문은 빈 줄로 문단을 나누고 `## 소제목`, 삼중 백틱 코드 블록을 지원합니다. 전체 Markdown 문법은 지원하지 않습니다.
+
+이미지는 PNG/JPEG/WebP/GIF, 파일당 10MB까지 허용합니다. 원본은 JSON에 포함되고 GIF 애니메이션을 유지합니다. 초안은 현재 브라우저에 저장합니다. 브라우저 저장 공간이 부족하면 다운로드로 보관하세요.
+
+**글 파일 다운로드**로 받은 JSON을 `posts/`에 추가해 main에 반영하면 GitHub Actions가 HTML 페이지와 사이트맵을 생성해 배포합니다. 기본 샘플 네 개는 `sample: true`이며 본인 글로 교체할 수 있습니다. 최신 날짜의 글이 대표 글입니다.
+
+기존 글은 해당 JSON을 수정합니다. 블록 순서를 바꾸면 첨부 위치도 바뀝니다. 지원 블록: `paragraph`, `heading`, `code`, `image`, `youtube`.
+
+## 커뮤니티와 관리
+
+- `/community/`: 이메일 인증 후 방문자 글/댓글 작성, 자기 글 삭제
+- `/posts/글ID/`: 블로그 글별 댓글
+- `/admin/`: 관리자만 접근, 방문자 글/댓글 삭제, 계정 차단/해제, 금칙어 및 처리 방식 변경, 최근 관리 기록
+- 금칙어 처리: 등록 거부 또는 `＊` 마스킹, 새 게시물부터 적용
+- DB 강제 권한 검사, 사용자별 30초 작성 간격, 확인된 이메일 필요
+
+관리자 권한은 `supabase/grant-admin.sql`로 소유자가 부여합니다. UI를 수정하거나 사용자 프로필에 관리자 표시를 추가해도 관리자 권한을 얻을 수 없습니다. 관리자 삭제는 공개 노출을 중단하는 soft delete입니다. 계정 차단은 새 글/댓글 작성을 막으며 기존 글은 별도로 삭제합니다.
+
+## SEO
+
+블로그 글마다 `/posts/id/index.html`에 본문을 생성하므로 JavaScript 없이 읽을 수 있습니다. canonical, Open Graph, BlogPosting JSON-LD, sitemap.xml, robots.txt를 생성합니다. `/admin/`은 noindex입니다. 예전 해시 게시글 링크는 실제 URL로 이동합니다. 커뮤니티 게시물은 동적 데이터이며 정적 게시글 SEO 범위에 포함하지 않습니다. 구글 색인 여부나 순위는 보장하지 않습니다.
+
+## 검증
+
+```sh
+npm test
+npm run build
+# 개발 서버 실행 상태에서, 별도 터미널:
+npm run test:browser
+npm run test:community-ui
+```
+
+브라우저 테스트 기본 Chromium 경로는 `/usr/bin/chromium`입니다. 다르면 `CHROMIUM_PATH`, 테스트 서버 주소가 다르면 `BLOG_TEST_URL`로 지정합니다.
+
+- 단위 테스트: YouTube URL, 이미지/XSS 처리, 본문 파싱, SEO 렌더링
+- PostgreSQL 호환 PGlite 통합 테스트: 실제 SQL을 실행하여 인증·RLS·소유권·차단·삭제·금칙어·작성 제한을 검증
+- 브라우저: 반응형·검색·필터·첨부·내보내기, 모의 Supabase 응답으로 인증/게시판/댓글/관리자 흐름, JS 비활성 본문 확인
+
+실제 Supabase와 이메일 발송의 종단 간 검증은 프로젝트 연결 이후 별도로 수행해야 합니다. 폰트는 자체 호스팅하고 프로필 SVG는 사용자가 제공한 이미지를 참고한 임시 일러스트입니다.

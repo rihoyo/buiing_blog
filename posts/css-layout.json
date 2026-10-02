@@ -1,0 +1,44 @@
+{
+  "id": "css-layout",
+  "title": "Grid와 Flex, 이제 헷갈리지 않기",
+  "category": "Tutorial",
+  "excerpt": "레이아웃 앞에서 더 이상 망설이지 않도록. 두 가지 도구의 차이를 예제로 이해해 봅니다.",
+  "date": "2026-09-24",
+  "art": "layers",
+  "tags": [
+    "CSS",
+    "Layout"
+  ],
+  "minutes": 5,
+  "sample": true,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "Flex는 한 방향의 흐름, Grid는 행과 열의 관계를 표현하기 좋습니다. 둘 중 하나를 선택해 전체 페이지를 만드는 대신 필요한 범위에 함께 사용해 보세요."
+    },
+    {
+      "type": "heading",
+      "text": "카드 목록은 Grid로"
+    },
+    {
+      "type": "code",
+      "text": ".cards {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));\n  gap: 24px;\n}"
+    },
+    {
+      "type": "paragraph",
+      "text": "auto-fit은 공간에 맞춰 열 수를 정합니다. min(100%, 260px)은 화면이 260px보다 좁아져도 카드가 컨테이너 밖으로 넘치지 않게 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "카드 안의 정렬은 Flex로"
+    },
+    {
+      "type": "code",
+      "text": ".card-meta {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n}\n.card-meta .more { margin-left: auto; }"
+    },
+    {
+      "type": "paragraph",
+      "text": "여러 행에서 열 위치를 맞춰야 한다면 Grid, 콘텐츠 크기에 따라 한 줄로 배치하고 정렬한다면 Flex부터 시도해 보세요."
+    }
+  ]
+}

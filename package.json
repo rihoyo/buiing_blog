@@ -1,0 +1,22 @@
+{
+  "name": "buiing-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test scripts/*.test.mjs",
+    "test:browser": "node scripts/browser-check.mjs",
+    "test:community-ui": "node scripts/community-browser.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.63.0",
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource-variable/noto-sans-kr": "^5.3.0",
+    "@supabase/supabase-js": "^2.117.2"
+  }
+}

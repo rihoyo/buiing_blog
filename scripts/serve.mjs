@@ -1,0 +1,6 @@
+import './build.mjs';
+import {createServer} from 'node:http';
+import {readFile,stat} from 'node:fs/promises';
+import {resolve,extname} from 'node:path';
+const root=resolve('dist');const config=JSON.parse(await readFile('site.config.json','utf8'));const base=new URL(process.env.SITE_URL||config.url).pathname.replace(/\/$/,'');
+createServer(async(req,res)=>{try{let path=decodeURIComponent(new URL(req.url,'http://localhost').pathname);if(base&&path===base){res.writeHead(302,{Location:base+'/'}).end();return;}if(base&&path.startsWith(base+'/'))path=path.slice(base.length);let file=resolve(root,'.'+path);if(file!==root&&!file.startsWith(root+'/')){res.writeHead(403).end();return;}if((await stat(file)).isDirectory())file+='/index.html';const data=await readFile(file);res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.json':'application/json','.xml':'application/xml','.txt':'text/plain','.svg':'image/svg+xml','.woff2':'font/woff2'})[extname(file)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404,{'Content-Type':'text/html; charset=utf-8'}).end(await readFile('dist/404.html'));}}).listen(Number(process.env.PORT)||3000,'0.0.0.0',()=>console.log(`http://localhost:${Number(process.env.PORT)||3000}${base}/`));

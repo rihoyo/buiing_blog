@@ -1,0 +1,40 @@
+{
+  "id": "git-routine",
+  "title": "미래의 나를 위한 Git 커밋 습관",
+  "category": "Dev Notes",
+  "excerpt": "작은 커밋 하나에도 맥락을 담는 방법. 매일의 개발 흐름을 조금 더 편하게 만드는 기록.",
+  "date": "2026-09-16",
+  "art": "terminal",
+  "tags": [
+    "Git",
+    "Workflow"
+  ],
+  "minutes": 3,
+  "sample": true,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "text": "커밋 기록은 미래의 동료와 나에게 남기는 설명입니다. 무엇을 바꿨는지뿐 아니라 왜 바꿨는지를 남기면 문제를 추적하는 시간을 줄일 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "한 커밋에 한 가지 의도"
+    },
+    {
+      "type": "paragraph",
+      "text": "버그 수정과 코드 스타일 변경을 분리해 보세요. 리뷰가 쉬워지고 문제가 생겼을 때 필요한 변경만 되돌리기도 편해집니다."
+    },
+    {
+      "type": "code",
+      "text": "git diff\ngit add -p\ngit diff --staged\ngit commit"
+    },
+    {
+      "type": "heading",
+      "text": "결과와 이유를 쓰기"
+    },
+    {
+      "type": "paragraph",
+      "text": "“검색 수정”보다 “검색어 변경 시 페이지를 초기화”처럼 행동을 구체적으로 적어 보세요. 커밋 본문에는 사용자가 겪던 문제와 선택한 해결 방식의 이유를 남기면 충분합니다."
+    }
+  ]
+}
