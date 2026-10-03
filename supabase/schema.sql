@@ -59,7 +59,7 @@ begin
    while strpos(lower(b),lower(word))>0 loop b:=overlay(b placing repeat('＊',char_length(word)) from strpos(lower(b),lower(word)) for char_length(word)); end loop;
   end if;
  end loop;
- select left(coalesce(nullif(btrim(raw_user_meta_data->>'display_name'),''),'방문자'),40) into display_name from auth.users where id=uid and email_confirmed_at is not null;
+ select left(coalesce(nullif(btrim(raw_user_meta_data->>'display_name'),''),nullif(btrim(raw_user_meta_data->>'user_name'),''),nullif(btrim(raw_user_meta_data->>'full_name'),''),'방문자'),40) into display_name from auth.users where id=uid and email_confirmed_at is not null;
  if display_name is null then raise exception 'VERIFIED_EMAIL_REQUIRED'; end if;
  insert into public.entries(author_id,author_name,kind,title,body,blog_slug,thread_id) values(uid,display_name,p_kind,t,b,p_blog_slug,p_thread_id) returning id into result;
  return result;

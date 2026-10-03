@@ -7,7 +7,7 @@ site.url=process.env.SITE_URL||site.url;
 const origin=new URL(site.url);if(origin.protocol!=='https:')throw new Error('SITE_URL must use HTTPS');
 if(!site.url.endsWith('/'))site.url+='/';
 const base=new URL(site.url).pathname;
-const config={supabaseUrl:process.env.SUPABASE_URL||site.supabaseUrl,supabasePublishableKey:process.env.SUPABASE_PUBLISHABLE_KEY||site.supabasePublishableKey};
+const config={loginMethods:site.loginMethods||['google'],supabaseUrl:process.env.SUPABASE_URL||site.supabaseUrl,supabasePublishableKey:process.env.SUPABASE_PUBLISHABLE_KEY||site.supabasePublishableKey};
 if(config.supabasePublishableKey.startsWith('sb_secret_'))throw new Error('Use a publishable key, never a secret key');
 if(config.supabasePublishableKey.split('.').length===3){const claims=JSON.parse(Buffer.from(config.supabasePublishableKey.split('.')[1],'base64url').toString());if(claims.role!=='anon')throw new Error('Only the anon JWT may be published');}
 if(config.supabaseUrl&&new URL(config.supabaseUrl).protocol!=='https:')throw new Error('Supabase URL must use HTTPS');

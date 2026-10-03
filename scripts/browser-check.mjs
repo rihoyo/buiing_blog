@@ -10,13 +10,7 @@ await page.locator('#list-search').fill('not found');assert.equal(await page.loc
 await page.locator('#list-search').fill('');await page.locator('.card').click();await page.locator('.article h1').waitFor();assert.match(await page.locator('.article h1').textContent(),/Grid/);
 await page.getByRole('button',{name:'글 검색',exact:true}).click();await page.locator('#global-search').fill('Git');assert.equal(await page.locator('.search-result').count(),1);await page.locator('.search-result').click();await page.waitForFunction(()=>document.querySelector('.article h1')?.textContent.includes('Git'));assert.match(await page.locator('.article h1').textContent(),/Git/);
 await page.locator('#theme-toggle').click();assert.equal(await page.locator('body').evaluate(e=>e.classList.contains('dark')),true);await page.locator('#theme-toggle').click();
-await page.locator('#write-button').click();await page.locator('#edit-title').fill('브라우저 테스트');await page.locator('#edit-text').fill('## 제목\n\n본문입니다.\n\n```js\nconst x = 1;\n```');
-await page.locator('#image-upload').setInputFiles({name:'test.gif',mimeType:'image/gif',buffer:Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64')});await page.locator('.media-item img').waitFor();
-await page.locator('#add-video').click();await page.locator('#youtube-url').fill('https://youtu.be/dQw4w9WgXcQ');await page.locator('#confirm-video').click();assert.equal(await page.locator('.media-item').count(),2);
-await page.locator('#save-draft').click();assert.match(await page.locator('#editor-status').textContent(),/저장했습니다/);
-const downloadPromise=page.waitForEvent('download');await page.locator('button[type=submit]').click();const download=await downloadPromise;await download.saveAs('/tmp/blog-export.json');
-const {readFile}=await import('node:fs/promises');const data=JSON.parse(await readFile('/tmp/blog-export.json','utf8'));assert.deepEqual(data.blocks.map(b=>b.type),['heading','paragraph','code','image','youtube']);
-await page.locator('#editor-dialog .close-dialog').click();
+assert.equal(await page.locator('#write-button').isVisible(),false);assert.equal(await page.locator('#editor-dialog').count(),0);
 await page.goto(base+'about/');await page.locator('.about').waitFor();
-await page.setViewportSize({width:390,height:844});await page.goto(base);await page.locator('.card').first().waitFor();await page.screenshot({path:'/tmp/buiing-mobile.png',fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.locator('#write-button').click();assert.equal(await page.locator('#edit-title').inputValue(),'브라우저 테스트');
-assert.deepEqual(errors,[]);console.log('Desktop/mobile, filters, search, article, theme, draft, GIF, YouTube, export: passed');await browser.close();
+await page.setViewportSize({width:390,height:844});await page.goto(base);await page.locator('.card').first().waitFor();await page.screenshot({path:'/tmp/buiing-mobile.png',fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.equal(await page.locator('#write-button').isVisible(),false);assert.equal(await page.locator('#editor-dialog').count(),0);
+assert.deepEqual(errors,[]);console.log('Desktop/mobile, filters, search, article, theme, and anonymous editor exclusion: passed');await browser.close();

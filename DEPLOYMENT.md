@@ -32,27 +32,30 @@ GitHub 요금제에 따라 비공개 저장소의 Pages 사용이 제한될 수 
 
 권한 검사는 DB에서 수행됩니다. 공개 사용자는 읽기만 가능하며, 인증된 사용자도 승인된 함수로만 작성/삭제할 수 있습니다. 관리자 권한은 별도 비공개 테이블로 관리합니다.
 
-## 4. 이메일 로그인 설정
+## 4. 무료 Google 로그인 연결
 
-1. Supabase **Authentication → URL Configuration**의 Site URL을 `https://rihoyo.github.io/buiing_blog/`로 설정합니다.
-2. **Authentication → Providers / Sign In**에서 Email 로그인을 켜고 이메일 확인을 유지합니다.
-3. **Authentication → Email Templates**에서 **Magic Link**, **Confirm signup** 본문에 아래 코드를 포함하도록 설정합니다. 로그인 화면은 링크 대신 메일의 숫자 코드를 받습니다.
+블로그 회원/운영자는 Google 계정으로 로그인합니다. **메일 발송 서비스·도메인 구매·SMTP 설정이 필요 없습니다.** Supabase는 Free 요금제를 유지합니다. Google OAuth 설정에는 유료 API나 결제 계정 연결이 필요하지 않습니다. 무료 체험/크레딧 신청이나 카드 등록을 진행하지 않습니다.
 
-```html
-<h2>BUIING 로그인 인증</h2>
-<p>아래 코드를 로그인 화면에 입력해 주세요.</p>
-<p>{{ .Token }}</p>
-<p>본인이 요청하지 않았다면 무시해 주세요.</p>
-```
+1. Supabase **Authentication → URL Configuration**에서 Site URL을 `https://rihoyo.github.io/buiing_blog/`로 설정합니다.
+2. Redirect URLs에는 `https://rihoyo.github.io/buiing_blog/**`를 추가합니다.
+3. Supabase **Authentication → Sign In / Providers → Google**에서 표시되는 **Callback URL**을 복사합니다. 보통 `https://프로젝트ID.supabase.co/auth/v1/callback`입니다.
+4. https://console.cloud.google.com/ 에서 OAuth 설정을 위한 프로젝트를 만듭니다. 결제 계정을 연결하지 않습니다.
+5. **Google Auth Platform**에서 앱 이름(`BUIING Blog`), 사용자 지원 이메일, 개발자 연락처를 등록합니다. 외부 방문자를 받으려면 Audience는 **External**입니다. Google 계정 기본 정보에 해당하는 `openid`, `email`, `profile`만 사용하며 Gmail/Drive 등 추가 권한은 요청하지 않습니다.
+6. 테스트 중에는 Audience의 **Test users**에 본인의 구글 이메일을 추가합니다. 일반 방문자에게 열 때는 **Publish app / In production**으로 전환해야 합니다. 화면에서 도메인 확인 등 추가 요구가 나오면 임의로 진행하지 말고 해당 화면을 확인합니다.
+7. **Clients → Create client → Web application**을 선택합니다.
+   - Authorized JavaScript origins: `https://rihoyo.github.io`
+   - Authorized redirect URIs: 3번에서 복사한 **Supabase Callback URL** (블로그 주소가 아님)
+8. 생성된 **Client ID**와 **Client secret**을 Supabase의 Google 제공자 설정에 입력하고 활성화합니다. Client secret은 Supabase에만 입력합니다. 채팅·저장소·site.config.json에 넣지 않습니다.
+9. 사이트에서 **로그인 → Google 계정으로 계속하기**를 눌러 테스트합니다.
 
-4. **실제 외부 방문자에게 메일을 보내려면 SMTP 설정이 필요합니다.** Supabase 기본 메일 발송은 프로젝트 조직 구성원 등으로 수신자가 제한되고 테스트 용량도 낮습니다. 관리자 한 명이 로그인되었다고 공개 방문자 인증이 준비된 것은 아닙니다.
-5. Supabase **Authentication → Email / SMTP Settings**에서 사용 중인 이메일 발송 서비스의 SMTP host/port/username/password와 검증된 발신 주소를 등록합니다. 해당 서비스의 도메인/발신자 인증도 완료해야 합니다. SMTP 비밀번호는 Supabase 설정에만 넣습니다. 메일 발송 서비스를 아직 사용하지 않는다면 관리자 테스트까지 먼저 진행하고, 방문자 오픈 전에 서비스 선택과 설정을 추가로 진행하세요.
-6. 별도의 방문자 이메일로 코드 수신·로그인을 확인합니다. 메일 서비스의 발송 제한을 고려해 Auth rate limit을 설정합니다. 공개 규모가 커지면 CAPTCHA 연동도 추가할 수 있습니다(현재 미구현).
+기본 로그인은 Google 하나입니다. PKCE 인증 흐름을 사용하며, Google로 로그인했다는 이유만으로 관리자 권한을 부여하지 않습니다. 아래 단계에서 소유자의 계정만 관리자로 등록합니다.
+
+이메일 OTP는 선택 기능으로 남아 있지만 기본 화면에는 나타나지 않습니다. 본 구성에서는 이를 활성화하거나 유료 SMTP를 연결할 필요가 없습니다.
 
 ## 5. 본인 계정을 관리자로 지정
 
-1. 사이트의 **커뮤니티 → 로그인 / 가입**에서 본인의 이메일로 인증 로그인을 한 번 완료합니다.
-2. `supabase/grant-admin.sql`의 `YOUR_ADMIN_EMAIL@example.com`을 **방금 로그인한 이메일**로 바꿉니다.
+1. 사이트의 **로그인 → Google 계정으로 계속하기**로 본인 계정의 로그인을 한 번 완료합니다.
+2. `supabase/grant-admin.sql`의 `YOUR_ADMIN_EMAIL@example.com`을 **Supabase Authentication → Users에서 본인 계정에 표시된 이메일**로 바꿉니다.
 3. Supabase SQL Editor에서 수정한 SQL을 실행합니다.
 4. https://rihoyo.github.io/buiing_blog/admin/ 을 새로고침합니다.
 5. 금칙어 설정, 글/댓글 삭제, 작성자 차단, 차단 해제가 표시되는지 확인합니다.
@@ -79,4 +82,20 @@ GitHub 요금제에 따라 비공개 저장소의 Pages 사용이 제한될 수 
 - 필터 수정은 새로 등록하는 글/댓글부터 적용됩니다. 기존 게시물에는 소급 적용하지 않습니다.
 - 댓글과 방문자 글은 Supabase에 저장됩니다. 브라우저 저장소에만 남는 데모가 아닙니다.
 - 블로그 본문은 `posts/*.json`으로 발행합니다. 관리자 화면의 게시물 관리는 방문자 게시글/댓글에 해당합니다.
-- SMTP, 인증, DB 백업과 서비스 요금/사용량은 계정 소유자가 관리합니다.
+- 기본 구성은 무료 Google 로그인 + Supabase Free + 공개 저장소의 GitHub Pages입니다. 유료 플랜이나 유료 메일 서비스는 연결하지 않습니다.
+
+## 관리자와 일반 회원의 경계
+
+| 기능 | 비로그인 | 일반 회원 | 운영자 |
+| --- | --- | --- | --- |
+| 블로그/공개 커뮤니티 읽기 | 가능 | 가능 | 가능 |
+| 댓글/커뮤니티 글 작성 | 불가 | 가능 | 가능 |
+| 본인 댓글/커뮤니티 글 삭제 | 불가 | 가능 | 가능 |
+| 블로그 편집기/초안/파일 다운로드 | 불가 | 불가 | 가능 |
+| 타인 글 삭제·차단·필터·관리 기록 | 불가 | 불가 | 가능 |
+
+일반 화면에는 로그인만 표시합니다. 글쓰기/관리자 메뉴는 DB의 관리자 권한을 확인한 계정에만 표시합니다. 편집기는 관리자 화면에서만 생성되며 열기·초안 저장·다운로드 때 권한을 다시 검사합니다. 로그아웃 또는 권한 거부 시 편집기와 관리 내용을 제거합니다. 초안 저장 키는 사용자 ID별로 분리합니다.
+
+블로그 공개 발행은 기존과 같이 운영자가 다운로드한 파일을 GitHub 저장소 `posts/`에 커밋하는 방식입니다. 브라우저에서 직접 배포하는 API는 없으며 일반 회원의 community API는 `thread`/`comment`만 허용합니다. GitHub 저장소의 쓰기 권한은 운영자에게만 부여하세요.
+
+GitHub Pages는 정적 호스팅이므로 `/admin/` 주소의 HTML/공개 JavaScript 파일 요청을 서버에서 403으로 거부할 수 없습니다. 그 HTML에는 관리 데이터/편집기 폼이 없으며, 일반 회원은 접근 거부 화면만 봅니다. 실제 관리 데이터와 변경 권한은 Supabase 함수/RLS에서 차단합니다. HTML 요청 자체까지 로그인 뒤에만 허용하려면 인증을 검사하는 별도의 서버/호스팅으로 옮겨야 합니다.

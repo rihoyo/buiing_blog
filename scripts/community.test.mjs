@@ -19,6 +19,20 @@ test('Database enforces auth, ownership, bans, rate limits and filtering',async(
  await assert.rejects(()=>db.query("insert into public.entries(author_id,author_name,kind,title,body)values($1,'Fake','thread','Bypass','Bypass')",[ALICE]),/permission denied/);
  await assert.rejects(()=>db.exec("select public.admin_settings(array['x'],'reject')"),/FORBIDDEN/);
  await assert.rejects(()=>db.exec('select * from private.admins'),/permission denied/);
+ await assert.rejects(()=>db.exec('select public.admin_state()'),/FORBIDDEN/);
+ await assert.rejects(()=>db.query("select public.admin_ban($1,'forged admin',true)",[BOB]),/FORBIDDEN/);
+ await assert.rejects(()=>db.query('insert into private.admins values($1)',[ALICE]),/permission denied/);
+ await assert.rejects(()=>db.exec('select * from private.bans'),/permission denied/);
+ await assert.rejects(()=>db.exec('select * from private.settings'),/permission denied/);
+ await assert.rejects(()=>db.exec('select * from private.audit'),/permission denied/);
+ await assert.rejects(()=>db.query("update public.entries set author_id=$1 where id=$2",[BOB,thread]),/permission denied/);
+ await age();await as(ALICE);
+ await assert.rejects(()=>create('Cannot publish to blog','blog'),/INVALID_CONTENT/);
+ // User-editable profile metadata must never confer ownership or admin access.
+ await db.exec('reset role');await db.query(`update auth.users set raw_user_meta_data='{"display_name":"Admin","role":"admin","is_admin":true}' where id=$1`,[ALICE]);await as(ALICE);
+ assert.equal((await db.query('select public.is_admin() as allowed')).rows[0].allowed,false);
+ await assert.rejects(()=>db.exec('select public.admin_state()'),/FORBIDDEN/);
+
  await as(BOB);await assert.rejects(()=>db.query('select public.delete_entry($1)',[thread]),/FORBIDDEN/);
  const reply=(await create('Reply','comment',null,thread)).rows[0].id;
  await as(ADMIN);await db.exec("select public.admin_settings(array['BAD','a.b'],'reject')");
@@ -32,5 +46,14 @@ test('Database enforces auth, ownership, bans, rate limits and filtering',async(
  await as(ADMIN);assert.equal((await db.query('select * from public.entries where id=any($1::uuid[])',[[thread,reply]])).rows.length,2);assert.ok((await db.query('select public.admin_state() as state')).rows[0].state.audit.length>=4);
  await age();await as(BOB);await assert.rejects(()=>create('On deleted parent','comment',null,thread),/THREAD_NOT_FOUND/);
  await db.exec('reset role');await db.query('update auth.users set email_confirmed_at=null where id=$1',[BOB]);await as(BOB);await assert.rejects(()=>create('Unverified'),/VERIFIED_EMAIL_REQUIRED/);
- }finally{await db.close()}
+
+ // Revoking the DB role invalidates privileged API calls immediately, even
+ // with the same authenticated user/JWT remaining in the browser.
+ await db.exec('reset role');await db.query('delete from private.admins where user_id=$1',[ADMIN]);await as(ADMIN);
+ assert.equal((await db.query('select public.is_admin() as allowed')).rows[0].allowed,false);
+ await assert.rejects(()=>db.exec('select public.admin_state()'),/FORBIDDEN/);
+ await assert.rejects(()=>db.exec("select public.admin_settings(array['x'],'reject')"),/FORBIDDEN/);
+ await assert.rejects(()=>db.query('select public.admin_ban($1)',[ALICE]),/FORBIDDEN/);
+ await as(null,'anon');await assert.rejects(()=>db.exec('select public.admin_state()'),/permission denied/);
+}finally{await db.close()}
 });
