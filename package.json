@@ -8,7 +8,8 @@
     "test": "node --test scripts/*.test.mjs",
     "test:browser": "node scripts/browser-check.mjs",
     "test:community-ui": "node scripts/community-browser.mjs",
-    "test:counter": "node scripts/counter-browser.mjs"
+    "test:counter": "node scripts/counter-browser.mjs",
+    "test:editor-ui": "node scripts/editor-browser.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

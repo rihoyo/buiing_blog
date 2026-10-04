@@ -18,7 +18,7 @@ const posts=[];
 for(const f of (await readdir('posts')).filter(f=>f.endsWith('.json')).sort()){
  const p=JSON.parse(await readFile(`posts/${f}`,'utf8'));
  if(!/^[a-zA-Z0-9_-]+$/.test(p.id)||!p.title||!Array.isArray(p.blocks)||!/^\d{4}-\d{2}-\d{2}$/.test(p.date))throw new Error(`Invalid post: ${f}`);
- if(posts.some(x=>x.id===p.id))throw new Error(`Duplicate id: ${p.id}`);posts.push(p);
+ if(posts.some(x=>x.id===p.id))throw new Error(`Duplicate id: ${p.id}`);posts.push({...p,sourceFile:f});
 }posts.sort((a,b)=>b.date.localeCompare(a.date));
 await writeFile('dist/posts.json',JSON.stringify(posts));await writeFile('dist/config.json',JSON.stringify(config));await writeFile('dist/.nojekyll','');
 const template=(await readFile('index.html','utf8')).replace(/<title>.*?<\/title>/,'').replace(/<meta name="description"[^>]*>/,'');
