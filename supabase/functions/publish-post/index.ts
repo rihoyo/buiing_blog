@@ -41,13 +41,14 @@ Deno.serve(async(req:Request)=>{
    else if(b.type==='youtube'){let u;try{u=new URL(b.url)}catch{return respond({error:'INVALID_VIDEO'},400)}let id;if(['youtu.be','www.youtu.be'].includes(u.hostname))id=u.pathname.slice(1);else if(['youtube.com','www.youtube.com','m.youtube.com'].includes(u.hostname))id=u.searchParams.get('v')||u.pathname.match(/^\/(?:shorts|embed)\/([^/]+)/)?.[1];if(!/^[-\w]{11}$/.test(id||'')||!['embed','url','mention','bookmark'].includes(b.mode))return respond({error:'INVALID_VIDEO'},400);blocks.push({type:'youtube',url:'https://www.youtube.com/watch?v='+id,mode:b.mode,title:String(b.title||'YouTube 동영상').slice(0,160)});}
    else return respond({error:'INVALID_BLOCK'},400);
   }
+  if(p.coverImage){let u;try{u=new URL(p.coverImage)}catch{return respond({error:'INVALID_IMAGE'},400)}if(u.protocol!=='https:'||u.username||u.password)return respond({error:'INVALID_IMAGE'},400)}
   const now=new Date().toISOString(),text=blocks.filter(b=>'text' in b).map(b=>(b as any).text).join('\n');
-  const post={id:p.id,title:p.title.trim(),category:p.category,tags:Array.isArray(p.tags)?p.tags.slice(0,20).map((t:unknown)=>String(t).slice(0,40)):[],date:old?.date||new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date()),updatedAt:now,revision:p.revision,excerpt:text.slice(0,130),minutes:Math.max(1,Math.ceil(text.length/500)),art:old?.art||'code',blocks};
+  const post={id:p.id,title:p.title.trim(),category:p.category,tags:Array.isArray(p.tags)?p.tags.slice(0,20).map((t:unknown)=>String(t).slice(0,40)):[],date:old?.date||new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date()),updatedAt:now,revision:p.revision,excerpt:text.slice(0,130),minutes:Math.max(1,Math.ceil(text.length/500)),art:['code','layers','orb','terminal'].includes(p.art)?p.art:(old?.art||'code'),...(typeof p.artLabel==='string'?{artLabel:p.artLabel.slice(0,120)}:{}),...(typeof p.artCaption==='string'?{artCaption:p.artCaption.slice(0,120)}:{}),...(p.coverImage?{coverImage:p.coverImage,coverAlt:String(p.coverAlt||'').slice(0,500)}:{}),blocks};
   if(typeof p.revision!=='string'||!(/^[\w-]{1,100}$/).test(p.revision))return respond({error:'INVALID_POST'},400);
   const bytes=new TextEncoder().encode(JSON.stringify(post,null,2));let bin='';for(const byte of bytes)bin+=String.fromCharCode(byte);
   const saved=await fetch(endpoint,{method:'PUT',headers:gh,body:JSON.stringify({message:(old?'Update':'Publish')+' blog post: '+post.id,content:btoa(bin),branch:'main',...(sha?{sha}: {})})});
   if(saved.status===409||saved.status===422)return respond({error:'EDIT_CONFLICT'},409);
   if(!saved.ok)return respond({error:'GITHUB_WRITE_FAILED'},502);
-  const result=await saved.json();return respond({sha:result.content.sha,revision:post.revision,url:site+'/buiing_blog/posts/'+post.id+'/',actionsUrl:'https://github.com/rihoyo/buiing_blog/actions'});
+  const result=await saved.json();let live=false;try{const sync=await fetch(base+'/rest/v1/rpc/sync_published_post',{method:'POST',headers:authHeaders,body:JSON.stringify({p_post:post,p_file:file})});live=sync.ok&&await sync.json()===true}catch{}return respond({live,sha:result.content.sha,revision:post.revision,url:site+'/buiing_blog/posts/'+post.id+'/',actionsUrl:'https://github.com/rihoyo/buiing_blog/actions'});
  }catch{return respond({error:'PUBLISH_FAILED'},500)}
 });

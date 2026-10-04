@@ -32,7 +32,7 @@ await page('about/','소개 — BUIING','배움을 기록하고 지식을 나누
 await page('community/','커뮤니티 — BUIING','질문과 배움을 나누는 개발자 커뮤니티.','<section class="article"><h1>Community.</h1><p>질문과 배움을 나눠보세요. 게시판을 이용하려면 JavaScript를 활성화해 주세요.</p></section>');
 await page('write/','글쓰기 — BUIING','운영자 전용 블로그 글쓰기.','<section class="write-page"><h1>운영자 인증이 필요합니다.</h1></section>',{noindex:true});
 await page('admin/','관리자 — BUIING','블로그 관리자 페이지','<section class="article"><h1>관리자</h1><p>관리자 인증이 필요합니다.</p></section>',{noindex:true});
-await writeFile('dist/404.html',template.replace('<head>',`<head><base href="${esc(base)}"><meta name="robots" content="noindex"><title>페이지를 찾을 수 없습니다 — BUIING</title>`).replace('<main id="main"></main>','<main id="main"><section class="article"><h1>페이지를 찾을 수 없습니다.</h1><a href="./">홈으로 돌아가기</a></section></main>').replace('<script type="module" src="app.js"></script>',''));
+await writeFile('dist/404.html',template.replace('<head>',`<head><base href="${esc(base)}"><meta name="robots" content="noindex"><title>페이지를 찾을 수 없습니다 — BUIING</title>`).replace('<main id="main"></main>','<main id="main"><section class="article"><h1>페이지를 찾을 수 없습니다.</h1><a href="./">홈으로 돌아가기</a></section></main>'));
 const paths=['','about/','community/',...posts.map(p=>`posts/${p.id}/`)];
 await writeFile('dist/sitemap.xml',`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${paths.map(path=>`<url><loc>${esc(new URL(path,site.url).href)}</loc></url>`).join('')}</urlset>`);
 await writeFile('dist/robots.txt',`User-agent: *\nAllow: /\nDisallow: ${base}admin/\nDisallow: ${base}write/\nSitemap: ${site.url}sitemap.xml\n`);

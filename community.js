@@ -41,7 +41,7 @@ async function init(){
   })();
   try{return await initPromise}catch(e){initPromise=null;admin=false;syncHeader();throw e;}
 }
-export async function initializeIdentity(){try{await init()}catch{syncHeader()}}
+export async function initializeIdentity(){try{await init();syncHeader()}catch{syncHeader()}}
 async function requireAdminAccess(){try{return await init()&&await readRole()}catch{admin=false;syncHeader();return false}}
 async function signOut(){
   // Clear private screen content immediately, including an open editor.

@@ -5,11 +5,12 @@ import {transformSync} from 'esbuild';
 import vm from 'node:vm';
 import {renderBlock} from '../assets/post-content.js';
 const src=transformSync(await readFile('supabase/functions/publish-post/index.ts','utf8'),{loader:'ts'}).code;
-function service({admin=true,signedIn=true,old=null,token=true}={}){
+function service({admin=true,signedIn=true,old=null,token=true,liveReady=true}={}){
  let handler,written,githubCalls=0;
  const fetch=async(url,opts={})=>{
   if(url.endsWith('/auth/v1/user'))return Response.json({id:'owner'},{status:signedIn?200:401});
   if(url.endsWith('/rpc/is_admin'))return Response.json(admin);
+  if(url.endsWith('/rpc/sync_published_post'))return liveReady?Response.json(true):Response.json({error:'missing migration'},{status:404});
   githubCalls++;
   if(opts.method==='PUT'){written=JSON.parse(opts.body);return Response.json({content:{sha:'new-sha'}})}
   return old?Response.json({sha:'old-sha',content:Buffer.from(JSON.stringify(old)).toString('base64')}):Response.json({},{status:404});
@@ -34,4 +35,9 @@ test('Publisher prevents stale overwrites, path traversal and unsafe video block
 test('All YouTube display modes render safely in static and browser articles',()=>{
  for(const mode of ['embed','url','mention','bookmark']){const html=renderBlock({type:'youtube',url:'https://youtu.be/dQw4w9WgXcQ',title:'<script>bad</script>',mode});assert.ok(!html.includes('<script>'));assert.equal(html.includes('<iframe'),mode==='embed');assert.equal(html.includes('i.ytimg.com'),mode==='bookmark')}
  assert.equal(renderBlock({type:'youtube',url:'javascript:alert(1)'}),'');
+});
+
+test('Publisher exposes instant publication only after public snapshot persistence succeeds',async()=>{
+ for(const liveReady of [true,false]){const s=service({liveReady});const r=await s.call({action:'publish',file:'new-record.json',post:{...post,art:'layers',artLabel:'CUSTOM',artCaption:'NOTE',coverImage:'https://project.supabase.co/image.gif',coverAlt:'커버'}});assert.equal(r.status,200);assert.equal((await r.json()).live,liveReady);const saved=JSON.parse(Buffer.from(s.written.content,'base64'));assert.equal(saved.art,'layers');assert.equal(saved.artLabel,'CUSTOM');assert.equal(saved.coverAlt,'커버')}
+ const bad=service();assert.equal((await bad.call({action:'publish',file:'new-record.json',post:{...post,coverImage:'javascript:alert(1)'}})).status,400);assert.equal(bad.written,undefined);
 });
