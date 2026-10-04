@@ -12,7 +12,8 @@
     "test:editor-ui": "node scripts/editor-browser.mjs",
     "test:editor-features": "node scripts/editor-features-browser.mjs",
     "test:editor-private-table": "node scripts/editor-private-table-browser.mjs",
-    "test:home-privacy-drafts": "node scripts/home-privacy-drafts-browser.mjs"
+    "test:home-privacy-drafts": "node scripts/home-privacy-drafts-browser.mjs",
+    "test:guest-ui": "node scripts/guest-ui-browser.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
