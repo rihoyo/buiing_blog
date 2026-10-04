@@ -1,4 +1,4 @@
-import {loadPrivatePost} from './assets/private-posts.js';
+import {loadPrivatePost,resolvePrivateImages} from './assets/private-posts.js';
 import {renderBlock} from './assets/post-content.js';
 import {renderCover} from './assets/post-cover.js';
 import {mountCodeTools} from './assets/code-content.js';
@@ -10,10 +10,12 @@ const messages={LOGIN_REQUIRED:'로그인한 후 작성할 수 있습니다.',AC
 function errorText(e){return Object.entries(messages).find(([key])=>String(e?.message).includes(key))?.[1]||'요청을 처리하지 못했습니다. 연결과 입력 내용을 확인하고 다시 시도하세요.'}
 const displayName=()=>user?.user_metadata?.display_name||user?.user_metadata?.user_name||user?.user_metadata?.full_name||'회원';
 function clearAdminUI(){document.querySelectorAll('[data-admin-private],#editor-dialog').forEach(n=>n.remove());}
+let lastIdentity='';
 function syncHeader(){
   document.querySelectorAll('#write-button,.admin-link,.owner-edit').forEach(n=>{n.hidden=!admin});
   const account=$('#account-button');if(account){account.textContent=user?'로그아웃':'로그인';account.onclick=()=>user?signOut():showLogin();}
   if(!admin)clearAdminUI();
+  const identity=JSON.stringify([user?.id||null,admin]);if(identity!==lastIdentity){lastIdentity=identity;window.dispatchEvent(new CustomEvent('blog-identity-changed',{detail:{userId:user?.id||null,admin}}));}
 }
 async function readRole(){
   const version=identityVersion,uid=user?.id;
@@ -108,4 +110,6 @@ node.insertAdjacentHTML('beforeend',`<div data-admin-private><section class="adm
 
 }catch{clearAdminUI();node.insertAdjacentHTML('beforeend','<p role="alert">관리 정보를 불러오지 못했습니다. 다시 로그인하거나 연결 상태를 확인해 주세요.</p>')}}
 
-export async function mountPrivateArticle(){refresh=mountPrivateArticle;const main=$('#main');document.title='비공개 글 — BUIING';main.innerHTML='<section class="article"><h1>비공개 글</h1><div id="private-content">본인 인증을 확인하고 있습니다.</div></section>';const node=$('#private-content');if(!await ready(node))return;await readRole();node.innerHTML=authBar();bindAuth();if(!admin){node.insertAdjacentHTML('beforeend','<p>작성자 계정으로 로그인해야 볼 수 있습니다.</p>');return}const version=identityVersion;try{const id=new URLSearchParams(location.search).get('id');const {post:p}=await loadPrivatePost(client,id);if(version!==identityVersion||!admin||!node.isConnected)return;node.insertAdjacentHTML('beforeend',`<article data-admin-private><span class="pill">🔒 나만 보기</span><h1>${esc(p.title)}</h1><a class="outline-btn" href="write/?private=${encodeURIComponent(p.id)}">게시글 수정 ↗</a>${renderCover(p)}<div class="article-body">${p.blocks.map(renderBlock).join('')}</div></article>`);mountCodeTools(node)}catch{if(version===identityVersion&&node.isConnected)node.insertAdjacentHTML('beforeend','<p>글이 없거나 조회 권한이 없습니다. 비공개 기능 설치도 확인해 주세요.</p>')}}
+export async function mountPrivateArticle(postId=null){refresh=()=>mountPrivateArticle(postId);const main=$('#main');document.title='비공개 글 — BUIING';main.innerHTML='<section class="article"><h1>비공개 글</h1><div id="private-content">본인 인증을 확인하고 있습니다.</div></section>';const node=$('#private-content');if(!await ready(node))return;await readRole();node.innerHTML=authBar();bindAuth();if(!admin){node.insertAdjacentHTML('beforeend','<p>작성자 계정으로 로그인해야 볼 수 있습니다.</p>');return}const version=identityVersion;try{const id=postId||new URLSearchParams(location.search).get('id');const {post:p}=await loadPrivatePost(client,id);if(version!==identityVersion||!admin||!node.isConnected)return;node.insertAdjacentHTML('beforeend',`<article data-admin-private><span class="pill">🔒 나만 보기</span>${p.publicRemovalPending?'<p role="alert">공개 원본 제거가 아직 완료되지 않았습니다. 게시글 수정에서 제거를 다시 시도하세요.</p>':''}<h1>${esc(p.title)}</h1><a class="outline-btn" href="write/?private=${encodeURIComponent(p.id)}">게시글 수정 ↗</a>${renderCover(p)}<div class="article-body">${p.blocks.map(renderBlock).join('')}</div></article>`);mountCodeTools(node)}catch{if(version===identityVersion&&node.isConnected)node.insertAdjacentHTML('beforeend','<p>글이 없거나 조회 권한이 없습니다. 비공개 기능 설치도 확인해 주세요.</p>')}}
+
+export async function loadOwnerPostSummaries(){if(!await init()||!admin||!user)return [];const version=identityVersion,uid=user.id;const fields=['title','category','date','art','artLabel','artCaption','artText','artCodeText','artTerminalText','coverImage','coverAlt','coverPrivateImagePath'];const select=['id','updated_at','tags:post->tags','publicRemovalPending:post->publicRemovalPending',...fields.map(f=>`${f}:post->>${f}`)].join(',');const {data,error}=await client.from('owner_posts').select(select).eq('owner_id',uid).order('updated_at',{ascending:false});if(error||version!==identityVersion||uid!==user?.id||!admin)return [];const rows=await Promise.all(data.map(async p=>{try{return await resolvePrivateImages(client,{...p,visibility:'private',date:p.date||new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date(p.updated_at)),excerpt:'작성자 본인만 볼 수 있는 비공개 글입니다.',tags:Array.isArray(p.tags)?p.tags:[]})}catch{return {...p,coverImage:null,visibility:'private',date:p.date||p.updated_at.slice(0,10),tags:p.tags||[]}}}));return version===identityVersion&&uid===user?.id&&admin?rows:[]}

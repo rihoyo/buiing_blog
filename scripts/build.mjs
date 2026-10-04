@@ -14,9 +14,10 @@ if(config.supabaseUrl&&new URL(config.supabaseUrl).protocol!=='https:')throw new
 await rm('dist',{recursive:true,force:true});await mkdir('dist',{recursive:true});
 for(const f of ['style.css','assets','counter-sw.js'])await cp(f,`dist/${f}`,{recursive:true});
 await build({entryPoints:['app.js'],bundle:true,format:'esm',outfile:'dist/app.js',minify:true});
-const posts=[];
+const posts=[],withdrawn=[];
 for(const f of (await readdir('posts')).filter(f=>f.endsWith('.json')).sort()){
  const p=JSON.parse(await readFile(`posts/${f}`,'utf8'));
+ if(p.visibility==='withdrawn'){if(!/^[a-zA-Z0-9_-]+$/.test(p.id))throw Error('Invalid withdrawn id');withdrawn.push(p.id);continue}
  if(p.visibility==='private')throw new Error('Private content must never be stored in posts/: '+f);
  if(!/^[a-zA-Z0-9_-]+$/.test(p.id)||!p.title||!Array.isArray(p.blocks)||!/^\d{4}-\d{2}-\d{2}$/.test(p.date))throw new Error(`Invalid post: ${f}`);
  if(posts.some(x=>x.id===p.id))throw new Error(`Duplicate id: ${p.id}`);posts.push({...p,sourceFile:f});
@@ -28,6 +29,7 @@ async function page(path,title,description,body,opts={}){
  await mkdir(`dist/${path}`,{recursive:true});await writeFile(`dist/${path}index.html`,html);
 }
 await page('',`${site.title} — 배우고, 기록하고, 나누다.`,site.description,renderHome(posts));
+for(const id of withdrawn)await page(`posts/${id}/`,'비공개 글 — BUIING','작성자 인증이 필요합니다.',`<section class="article" data-withdrawn-id="${esc(id)}"><h1>비공개 글</h1><a href="private-post/?id=${encodeURIComponent(id)}">작성자 계정으로 보기</a></section>`,{noindex:true});
 for(const p of posts)await page(`posts/${p.id}/`,`${p.title} — ${site.title}`,p.excerpt,renderArticle(p),{article:p});
 await page('about/','소개 — BUIING','배움을 기록하고 지식을 나누는 개발자 부잉입니다.','<section class="about"><h1>Stay curious.<br>Keep it simple.</h1><p>귀찮은 일을 줄이기 위해 코드를 쓰고, 다시 헤매지 않기 위해 배운 것을 기록합니다.</p></section>');
 await page('community/','커뮤니티 — BUIING','질문과 배움을 나누는 개발자 커뮤니티.','<section class="article"><h1>Community.</h1><p>질문과 배움을 나눠보세요. 게시판을 이용하려면 JavaScript를 활성화해 주세요.</p></section>');

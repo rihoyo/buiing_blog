@@ -5,14 +5,17 @@ import {transformSync} from 'esbuild';
 import vm from 'node:vm';
 import {renderBlock} from '../assets/post-content.js';
 const src=transformSync(await readFile('supabase/functions/publish-post/index.ts','utf8'),{loader:'ts'}).code;
-function service({admin=true,signedIn=true,old=null,token=true,liveReady=true}={}){
+function service({admin=true,signedIn=true,old=null,token=true,liveReady=true,stageReady=true,removalFails=false,ownerRecord=null}={}){
  let handler,written,githubCalls=0;
  const fetch=async(url,opts={})=>{
   if(url.endsWith('/auth/v1/user'))return Response.json({id:'owner'},{status:signedIn?200:401});
   if(url.endsWith('/rpc/is_admin'))return Response.json(admin);
+  if(url.endsWith('/rpc/stage_public_to_private'))return stageReady?Response.json(JSON.parse(opts.body).p_post.revision):Response.json({message:'missing migration'},{status:404});
+  if(url.endsWith('/rpc/finish_owner_transition'))return Response.json(true);
+  if(url.includes('/rest/v1/owner_posts?'))return Response.json(ownerRecord?[{post:ownerRecord}]:[]);
   if(url.endsWith('/rpc/sync_published_post'))return liveReady?Response.json(true):Response.json({error:'missing migration'},{status:404});
   githubCalls++;
-  if(opts.method==='PUT'){written=JSON.parse(opts.body);return Response.json({content:{sha:'new-sha'}})}
+  if(opts.method==='PUT'){written=JSON.parse(opts.body);if(removalFails)return Response.json({},{status:503});return Response.json({content:{sha:'new-sha'}})}
   return old?Response.json({sha:'old-sha',content:Buffer.from(JSON.stringify(old)).toString('base64')}):Response.json({},{status:404});
  };
  vm.runInNewContext(src,{Deno:{env:{get:k=>({SUPABASE_URL:'https://project.supabase.co',SUPABASE_ANON_KEY:'anon',BLOG_GITHUB_TOKEN:token?'server-only-token':null})[k]},serve:h=>handler=h},fetch,Request,Response,TextEncoder,TextDecoder,URL,Uint8Array,atob,btoa,Intl});
@@ -55,4 +58,14 @@ test('Publisher validates visual tables and refuses private content before any G
  const s=service();const table={type:'table',header:true,rows:[['A','B'],['<script>','value']]};assert.equal((await s.call({action:'publish',file:post.id+'.json',post:{...post,blocks:[table]}})).status,200);const published=JSON.parse(Buffer.from(s.written.content,'base64'));assert.deepEqual(published.blocks,[table]);assert.doesNotMatch(renderBlock(table),/<script>/);
  for(const rows of [[],[['a'],['b','c']],[[42]],Array.from({length:31},()=>['x'])]){const bad=service();assert.equal((await bad.call({action:'publish',file:post.id+'.json',post:{...post,blocks:[{...table,rows}]}})).status,400);assert.equal(bad.written,undefined)}
  const privateService=service();assert.equal((await privateService.call({action:'publish',file:post.id+'.json',post:{...post,visibility:'private'}})).status,400);assert.equal(privateService.written,undefined);assert.equal(privateService.calls,0);
+});
+
+test('Public-to-private conversion writes only a tombstone to GitHub, and reports incomplete removal honestly',async()=>{
+ const secret={...post,visibility:'private',title:'CONFIDENTIAL_TITLE',blocks:[{type:'paragraph',text:'CONFIDENTIAL_BODY_URL'}]};const body={action:'make-private',file:post.id+'.json',sha:'old-sha',post:secret};const s=service({old:{...post,date:'2026-10-01'}});const result=await(await s.call(body)).json();assert.equal(result.removalPending,false);assert.equal(result.sha,post.revision);const tombstone=JSON.parse(Buffer.from(s.written.content,'base64'));assert.equal(tombstone.visibility,'withdrawn');assert.equal(tombstone.title,undefined);assert.equal(tombstone.blocks,undefined);assert.ok(!JSON.stringify(s.written).includes('CONFIDENTIAL'));
+ const pending=service({old:post,removalFails:true});assert.equal((await(await pending.call(body)).json()).removalPending,true);
+ const missing=service({old:post,stageReady:false});assert.equal((await missing.call(body)).status,409);assert.equal(missing.written,undefined);
+ const stale=service({old:post});assert.equal((await stale.call({...body,sha:'stale'})).status,409);assert.equal(stale.written,undefined);
+ const forbidden=service({old:post});assert.equal((await forbidden.call({action:'finish-private',file:post.id+'.json',privateId:post.id})).status,403);assert.equal(forbidden.written,undefined);
+ const retry=service({old:post,ownerRecord:{...secret,publicSourceFile:post.id+'.json'}});assert.equal((await(await retry.call({action:'finish-private',file:post.id+'.json',privateId:post.id})).json()).removalPending,false);
+ const withdrawn=service({old:{id:post.id,visibility:'withdrawn'}});assert.equal((await withdrawn.call({action:'publish',file:post.id+'.json',sha:'old-sha',post})).status,409);assert.equal(withdrawn.written,undefined);
 });

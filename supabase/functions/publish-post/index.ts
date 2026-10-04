@@ -19,7 +19,7 @@ Deno.serve(async(req:Request)=>{
   if(!token)return respond({error:'PUBLISH_SETUP_REQUIRED'},503);
   const raw=await req.text();if(new TextEncoder().encode(raw).length>900000)return respond({error:'POST_TOO_LARGE'},413);
   const input=JSON.parse(raw),file=input.file;
-  if(input.post?.visibility==='private')return respond({error:'PRIVATE_POST_USE_OWNER_STORAGE'},400);
+  if(input.post?.visibility==='private'&&input.action!=='make-private')return respond({error:'PRIVATE_POST_USE_OWNER_STORAGE'},400);
   if(typeof file!=='string'||!(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,159}\.json$/).test(file))return respond({error:'INVALID_FILE'},400);
   const endpoint='https://api.github.com/repos/rihoyo/buiing_blog/contents/posts/'+file;
   const gh={Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','User-Agent':'buiing-blog-publisher','Content-Type':'application/json'};
@@ -27,6 +27,31 @@ Deno.serve(async(req:Request)=>{
   if(!current.ok&&current.status!==404)return respond({error:'GITHUB_ACCESS_FAILED'},502);
   let old:any=null,sha:string|null=null;
   if(current.ok){const data=await current.json();sha=data.sha;if(data.encoding==='none'){const rawFile=await fetch(endpoint+'?ref=main',{headers:{...gh,Accept:'application/vnd.github.raw+json'}});if(!rawFile.ok)return respond({error:'GITHUB_ACCESS_FAILED'},502);old=await rawFile.json();}else old=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(data.content.replace(/\s/g,'')),c=>c.charCodeAt(0))));}
+  if(['make-private','finish-private'].includes(input.action)){
+   let p:any;
+   if(input.action==='make-private'){
+    p=input.post;
+    if(!old||old.visibility==='withdrawn'||!p||p.visibility!=='private'||p.id!==old.id)return respond({error:'INVALID_POST'},400);
+    if((input.sha||null)!==sha)return respond({error:'EDIT_CONFLICT'},409);
+    p={...p,date:old.date,publicSourceFile:file,publicRemovalPending:true};
+    const stage=await fetch(base+'/rest/v1/rpc/stage_public_to_private',{method:'POST',headers:authHeaders,body:JSON.stringify({p_post:p,p_file:file})});
+    if(!stage.ok){const error=await stage.json().catch(()=>({}));return respond({error:String(error.message||'').includes('EDIT_CONFLICT')?'EDIT_CONFLICT':'PRIVACY_TRANSITION_SETUP_REQUIRED'},409)}
+   }else{
+    if(typeof input.privateId!=='string'||!(/^[a-zA-Z0-9_-]{1,160}$/).test(input.privateId))return respond({error:'INVALID_POST'},400);
+    const mine=await fetch(base+'/rest/v1/owner_posts?select=post,revision&id=eq.'+encodeURIComponent(input.privateId),{headers:authHeaders});
+    if(!mine.ok)return respond({error:'PRIVATE_SETUP_REQUIRED'},503);
+    const rows=await mine.json();p=rows[0]?.post;
+    if(!p||p.visibility!=='private'||p.publicSourceFile!==file||(old&&old.id!==p.id))return respond({error:'FORBIDDEN'},403);
+   }
+   const tombstone={id:p.id,visibility:'withdrawn',date:p.date,updatedAt:new Date().toISOString()};
+   const text=JSON.stringify(tombstone,null,2),bytes=new TextEncoder().encode(text);let bin='';for(const byte of bytes)bin+=String.fromCharCode(byte);
+   let removalPending=true;try{
+    const removed=await fetch(endpoint,{method:'PUT',headers:gh,body:JSON.stringify({message:'Make blog post private: '+p.id,content:btoa(bin),branch:'main',...(sha?{sha}:{})})});
+    if(removed.ok){const finished=await fetch(base+'/rest/v1/rpc/finish_owner_transition',{method:'POST',headers:authHeaders,body:JSON.stringify({p_id:p.id,p_revision:p.revision})});removalPending=!(finished.ok&&await finished.json()===true)}
+   }catch{}
+   return respond({live:true,sha:p.revision,removalPending,url:site+'/buiing_blog/private-post/?id='+encodeURIComponent(p.id)});
+  }
+  if(old?.visibility==='withdrawn')return respond({error:'POST_PRIVATE'},409);
   if(input.action==='load')return old?respond({post:old,sha,file}):respond({error:'POST_NOT_FOUND'},404);
   if(input.action!=='publish')return respond({error:'INVALID_ACTION'},400);
   if((input.sha||null)!==sha)return respond({error:'EDIT_CONFLICT'},409);

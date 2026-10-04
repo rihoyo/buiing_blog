@@ -31,3 +31,5 @@ test('Code and terminal centers render editable text safely and preserve default
  const code=renderCover({art:'code',artCodeText:'React <script>'});assert.ok(code.includes('React &lt;script&gt;'));assert.ok(!code.includes('<svg'));assert.ok(!code.includes('<script>'));
  const terminal=renderCover({art:'terminal',artTerminalText:'~/my-blog\n❯ npm run build\n완료 <img onerror=x>'});assert.ok(terminal.includes('~/my-blog'));assert.ok(terminal.includes('❯ npm run build'));assert.ok(terminal.includes('완료 &lt;img onerror=x&gt;'));assert.ok(!terminal.includes('<img'));assert.ok(!terminal.includes('git add'));
 });
+
+test('Withdrawal always removes a static record, including one with an incorrect future timestamp',()=>{const old={id:'private',date:'2026-10-05',updatedAt:'2099-01-01'};assert.deepEqual(mergePosts([old],[{id:old.id,visibility:'withdrawn',updatedAt:'2026-10-05'}]),[])});

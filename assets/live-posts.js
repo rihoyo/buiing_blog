@@ -1,8 +1,8 @@
 // Public, already published records. Static HTML remains available during outages.
 export function mergePosts(staticPosts,livePosts){
  const posts=new Map(staticPosts.map(p=>[p.id,p]));
- for(const p of livePosts){const old=posts.get(p.id);if(!old||(p.updatedAt||'')>=(old.updatedAt||''))posts.set(p.id,p)}
- return [...posts.values()].sort((a,b)=>b.date.localeCompare(a.date)||(b.updatedAt||'').localeCompare(a.updatedAt||''));
+ for(const p of livePosts){const old=posts.get(p.id);if(p.visibility==='withdrawn'||!old||(p.updatedAt||'')>=(old.updatedAt||''))posts.set(p.id,p)}
+ return [...posts.values()].filter(p=>p.visibility!=='withdrawn').sort((a,b)=>b.date.localeCompare(a.date)||(b.updatedAt||'').localeCompare(a.updatedAt||''));
 }
 export async function loadLivePosts(){
  try{
@@ -16,7 +16,7 @@ export async function loadLivePosts(){
    const response=await fetch(url,{headers:{apikey:config.supabasePublishableKey},cache:'no-store',signal});
    if(!response.ok)return [];
    const rows=await response.json();if(!Array.isArray(rows))return [];
-   for(const row of rows){const p=row.post;if(p&&/^[\w-]{1,160}$/.test(p.id)&&typeof p.title==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(p.date)&&Array.isArray(p.blocks))result.push({...p,sourceFile:row.source_file})}
+   for(const row of rows){const p=row.post;if(p?.visibility==='withdrawn'&&/^[\w-]{1,160}$/.test(p.id)){result.push({id:p.id,visibility:'withdrawn',updatedAt:p.updatedAt||''});continue}if(p&&/^[\w-]{1,160}$/.test(p.id)&&typeof p.title==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(p.date)&&Array.isArray(p.blocks))result.push({...p,sourceFile:row.source_file})}
    if(rows.length<1000)return result;
   }
  }catch{return []}
