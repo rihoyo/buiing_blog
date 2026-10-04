@@ -4,32 +4,48 @@
   "category": "Development",
   "tags": [],
   "date": "2026-10-04",
-  "updatedAt": "2026-10-04T13:55:08.012Z",
-  "revision": "fb3be605-268a-471a-84a9-2aa367c89d8e",
-  "excerpt": "asdasdasd\n아니 하지만 제대로 작동하는 코드가 없다는게 말이나 되는 말이냔 말이냐",
+  "updatedAt": "2026-10-04T14:52:45.403Z",
+  "revision": "c3a19609-b49a-4f87-871b-fa8772f345ba",
+  "excerpt": "asdasdasd\n*결국 올 것이 왔다*\n_아니 오고 말 것이 온 걸까_\n~하지만 인정할 수 없다...!~\n`아니 어떡하라고`\n*dflsd;*\n/gsgfsd/\n/*dsdsds*/\n*/dsdsds/*\nif",
   "minutes": 1,
-  "art": "layers",
-  "artLabel": "123",
-  "artCaption": "ㅂㅈㄷ",
+  "art": "waves",
+  "artLabel": "wjdopsakjpdo",
+  "artCaption": "22ie9292i9doipwekjd902jkd9k20",
+  "artText": "KEEP FLOWING no fuck",
   "blocks": [
     {
       "type": "heading",
       "text": "asdasdasd"
     },
     {
-      "type": "image",
-      "src": "https://dkdiuungbqdnidhtusns.supabase.co/storage/v1/object/public/blog-images/ecd1b35e-8b43-4ca7-9564-366e607c7864/63fbf62b-dd65-4879-83c2-ae3af338234a.gif",
-      "alt": "이건 또 무슨 소린지 원"
+      "type": "paragraph",
+      "text": "*결국 올 것이 왔다*\n_아니 오고 말 것이 온 걸까_\n~하지만 인정할 수 없다...!~\n`아니 어떡하라고`"
     },
     {
-      "type": "youtube",
-      "url": "https://www.youtube.com/watch?v=u7QzgQnYYUc",
+      "type": "image",
+      "src": "https://dkdiuungbqdnidhtusns.supabase.co/storage/v1/object/public/blog-images/ecd1b35e-8b43-4ca7-9564-366e607c7864/63fbf62b-dd65-4879-83c2-ae3af338234a.gif",
+      "alt": "이건 또 무슨 소린지 원... 야 너 문과지...!"
+    },
+    {
+      "type": "link",
+      "url": "https://video.wixstatic.com/video/b5a9ef_8ee8299b797d423aad2f60aa9fede5b7/720p/mp4/file.mp4",
       "mode": "embed",
-      "title": "video.wixstatic.com"
+      "title": "video.wixstatic.com",
+      "description": "",
+      "thumbnail": ""
+    },
+    {
+      "type": "link",
+      "url": "https://videos.3dhentai.it.com/uploads/videos/2025/1737/5477eb46bcda684d.mp4",
+      "mode": "embed",
+      "title": "videos.3dhentai.it.com",
+      "description": "",
+      "thumbnail": ""
     },
     {
       "type": "code",
-      "text": "아니 하지만 제대로 작동하는 코드가 없다는게 말이나 되는 말이냔 말이냐"
+      "text": "*dflsd;*\n/gsgfsd/\n/*dsdsds*/\n*/dsdsds/*\nif",
+      "language": "html"
     }
   ]
 }
