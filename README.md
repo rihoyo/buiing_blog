@@ -1,3 +1,5 @@
+링크·블록 드래그·마크다운·12종 썸네일 사용과 기존 게시 함수 업데이트는 [EDITOR-UPGRADE.md](EDITOR-UPGRADE.md), 커뮤니티/WAF 보호 범위는 [SECURITY.md](SECURITY.md)를 확인하세요.
+
 기존 게시 연결의 속도 개선과 썸네일 편집 설치는 [INSTANT-PUBLISHING-SETUP.md](INSTANT-PUBLISHING-SETUP.md)를 확인하세요.
 
 게시·수정 기능 연결은 [PUBLISHING-SETUP.md](PUBLISHING-SETUP.md)를 먼저 확인하세요. 초안 목록, 저장 주기, 본문 이미지/GIF 삽입과 YouTube 표시 방식도 설명돼 있습니다.
@@ -54,6 +56,7 @@ npm run test:browser
 npm run test:community-ui
 npm run test:counter
 npm run test:editor-ui
+npm run test:editor-features
 ```
 
 브라우저 테스트 기본 Chromium 경로는 `/usr/bin/chromium`입니다. 다르면 `CHROMIUM_PATH`, 테스트 서버 주소가 다르면 `BLOG_TEST_URL`로 지정합니다.
