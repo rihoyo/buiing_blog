@@ -4,8 +4,8 @@
   "category": "Development",
   "tags": [],
   "date": "2026-10-04",
-  "updatedAt": "2026-10-04T14:54:15.623Z",
-  "revision": "322b41f7-0213-41e0-8bde-0954a4bcf35a",
+  "updatedAt": "2026-10-04T15:41:32.257Z",
+  "revision": "338397d1-b89e-49ea-b173-ea776252730d",
   "excerpt": "asdasdasd\n*결국 올 것이 왔다*\n_아니 오고 말 것이 온 걸까_\n~하지만 인정할 수 없다...!~\n`아니 어떡하라고`\n*dflsd;*\n/gsgfsd/\n/*dsdsds*/\n*/dsdsds/*\nif",
   "minutes": 1,
   "art": "waves",
@@ -37,7 +37,7 @@
     {
       "type": "code",
       "text": "*dflsd;*\n/gsgfsd/\n/*dsdsds*/\n*/dsdsds/*\nif",
-      "language": "html"
+      "language": "javascript"
     }
   ]
 }
