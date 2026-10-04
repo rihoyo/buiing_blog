@@ -26,3 +26,14 @@ test('Block drop gaps preserve full block data and correctly handle moves in bot
  assert.equal(moveBlock(blocks,2,0),true);assert.deepEqual(blocks,original);
  for(const pair of [[0,0],[0,1],[-1,2],[3,0],[0,4]]){assert.equal(moveBlock(blocks,...pair),false);assert.deepEqual(blocks,original)}
 });
+
+test('Code highlighting labels languages, escapes markup and highlights fenced body code',()=>{
+ for(const [language,text] of [['html','<div class="x">Hello</div>'],['bash','echo "$HOME"'],['python','def hello():\n    return "world"']]){const html=renderBlock({type:'code',language,text});assert.ok(html.includes('data-language="'+language+'"'));assert.ok(html.includes('hljs-'));assert.ok(!html.includes('<div class="x">'))}
+ const fallback=renderBlock({type:'code',language:'evil" onclick="bad',text:'<script>alert(1)</script>'});assert.ok(fallback.includes('data-language="plaintext"'));assert.ok(!fallback.includes('<script>'));
+ assert.ok(renderBlock({type:'paragraph',text:'```python\ndef f():\n    return 1\n```'}).includes('language-python'));
+});
+test('Direct video and image URLs render native media rather than document iframes',()=>{
+ const url='https://video.wixstatic.com/video/b5a9ef_8ee8299b797d423aad2f60aa9fede5b7/720p/mp4/file.mp4';
+ assert.equal(linkDetails(url).media,'video');for(const suffix of ['', '?token=abc']){const html=renderBlock({type:'link',url:url+suffix,mode:'embed',title:'Video'});assert.ok(html.includes('<video controls playsinline'));assert.ok(!html.includes('<iframe'));assert.ok(html.includes(url))}
+ const html=renderBlock({type:'link',url:'https://example.com/picture.webp?size=500',mode:'embed',title:'Picture'});assert.ok(html.includes('media-image-frame'));assert.ok(!html.includes('<iframe'));
+});

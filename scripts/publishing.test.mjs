@@ -47,3 +47,7 @@ test('Publisher saves generic link modes, markdown and every cover template; rej
  for(const art of designs){const s=service();const blocks=[{type:'markdown',text:'**Hello**\n\n- one'},{type:'link',url:'https://example.com/path',mode:'bookmark',title:'Title',description:'Description',thumbnail:'https://example.com/image.webp'}];assert.equal((await s.call({action:'publish',file:'new-record.json',post:{...post,art,artText:'Custom',blocks}})).status,200);const saved=JSON.parse(Buffer.from(s.written.content,'base64'));assert.equal(saved.art,art);assert.equal(saved.artText,'Custom');assert.equal(saved.blocks[0].type,'markdown');assert.equal(saved.blocks[1].description,'Description')}
  for(const url of ['javascript:alert(1)','data:text/html,bad','https://user:password@example.com']){const s=service();assert.equal((await s.call({action:'publish',file:'new-record.json',post:{...post,blocks:[{type:'link',url,mode:'embed'}]}})).status,400);assert.equal(s.written,undefined)}
 });
+
+test('Publisher persists code languages and normalizes common aliases',async()=>{
+ for(const [language,expected] of [['html','html'],['sh','bash'],['py','python'],['javascript','javascript'],['bad" onclick="x','plaintext']]){const s=service();assert.equal((await s.call({action:'publish',file:'new-record.json',post:{...post,blocks:[{type:'code',language,text:'<script>hello</script>'}]}})).status,200);const saved=JSON.parse(Buffer.from(s.written.content,'base64'));assert.equal(saved.blocks[0].language,expected);assert.equal(saved.blocks[0].text,'<script>hello</script>')}
+});
