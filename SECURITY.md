@@ -23,3 +23,9 @@ GitHub Pages가 이 앱의 OWASP Top 10 대응을 완료해 주는 것은 아닙
 WAF 설치와 함께 회원별/IP별 요청 제한·가입/쓰기 봇 대응·오류/감사 로그와 알림·키 관리·백업 복원·의존성 업데이트를 운영해야 합니다. 서버 권한 검사는 WAF를 추가한 뒤에도 유지해야 합니다.
 
 참고: [OWASP Top 10](https://owasp.org/www-project-top-ten/), [OWASP WAF 안내](https://owasp.org/www-community/Web_Application_Firewall), [GitHub Pages HTTPS](https://docs.github.com/en/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https).
+
+## Private blog content
+
+Private posts use `owner_posts` with authenticated-only table grants and RLS requiring both `owner_id = auth.uid()` and `private.is_admin()`. Compare-and-set revision saves prevent stale overwrites. Private images use a separate non-public bucket with owner path policies and short-lived signed URLs. The private save client never invokes the GitHub publisher or public snapshot RPC; the publisher rejects posts explicitly marked private. The build fails if a private record is found under `posts/`. Private routes contain only an authentication shell and are excluded from indexing. Auth changes clear sensitive DOM before fetching a new identity.
+
+Privacy applies to new private records, not content previously committed to a public repository. Published visibility is fixed in the editor. Public Git history/caches cannot be recalled by a checkbox. External media requires its own origin access control. Signed media URLs are bearer URLs valid for five minutes; their holder can use them until expiry. Supabase project operators and database backups remain within the infrastructure trust boundary. Local draft storage is scoped to the user account but is not encrypted against people who control the same browser profile/device.

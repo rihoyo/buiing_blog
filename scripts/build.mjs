@@ -17,6 +17,7 @@ await build({entryPoints:['app.js'],bundle:true,format:'esm',outfile:'dist/app.j
 const posts=[];
 for(const f of (await readdir('posts')).filter(f=>f.endsWith('.json')).sort()){
  const p=JSON.parse(await readFile(`posts/${f}`,'utf8'));
+ if(p.visibility==='private')throw new Error('Private content must never be stored in posts/: '+f);
  if(!/^[a-zA-Z0-9_-]+$/.test(p.id)||!p.title||!Array.isArray(p.blocks)||!/^\d{4}-\d{2}-\d{2}$/.test(p.date))throw new Error(`Invalid post: ${f}`);
  if(posts.some(x=>x.id===p.id))throw new Error(`Duplicate id: ${p.id}`);posts.push({...p,sourceFile:f});
 }posts.sort((a,b)=>b.date.localeCompare(a.date));
@@ -31,10 +32,11 @@ for(const p of posts)await page(`posts/${p.id}/`,`${p.title} — ${site.title}`,
 await page('about/','소개 — BUIING','배움을 기록하고 지식을 나누는 개발자 부잉입니다.','<section class="about"><h1>Stay curious.<br>Keep it simple.</h1><p>귀찮은 일을 줄이기 위해 코드를 쓰고, 다시 헤매지 않기 위해 배운 것을 기록합니다.</p></section>');
 await page('community/','커뮤니티 — BUIING','질문과 배움을 나누는 개발자 커뮤니티.','<section class="article"><h1>Community.</h1><p>질문과 배움을 나눠보세요. 게시판을 이용하려면 JavaScript를 활성화해 주세요.</p></section>');
 await page('write/','글쓰기 — BUIING','운영자 전용 블로그 글쓰기.','<section class="write-page"><h1>운영자 인증이 필요합니다.</h1></section>',{noindex:true});
+await page('private-post/','비공개 글 — BUIING','작성자 본인만 읽는 비공개 글.','<section class="article"><h1>작성자 인증이 필요합니다.</h1></section>',{noindex:true});
 await page('admin/','관리자 — BUIING','블로그 관리자 페이지','<section class="article"><h1>관리자</h1><p>관리자 인증이 필요합니다.</p></section>',{noindex:true});
 await writeFile('dist/404.html',template.replace('<head>',`<head><base href="${esc(base)}"><meta name="robots" content="noindex"><title>페이지를 찾을 수 없습니다 — BUIING</title>`).replace('<main id="main"></main>','<main id="main"><section class="article"><h1>페이지를 찾을 수 없습니다.</h1><a href="./">홈으로 돌아가기</a></section></main>'));
 const paths=['','about/','community/',...posts.map(p=>`posts/${p.id}/`)];
 await writeFile('dist/sitemap.xml',`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${paths.map(path=>`<url><loc>${esc(new URL(path,site.url).href)}</loc></url>`).join('')}</urlset>`);
-await writeFile('dist/robots.txt',`User-agent: *\nAllow: /\nDisallow: ${base}admin/\nDisallow: ${base}write/\nSitemap: ${site.url}sitemap.xml\n`);
+await writeFile('dist/robots.txt',`User-agent: *\nAllow: /\nDisallow: ${base}admin/\nDisallow: ${base}write/\nDisallow: ${base}private-post/\nSitemap: ${site.url}sitemap.xml\n`);
 for(const [pkg,name]of[['manrope','manrope'],['noto-sans-kr','noto']]){const src=`node_modules/@fontsource-variable/${pkg}`;await mkdir(`dist/assets/fonts/${name}`,{recursive:true});for(const file of ['index.css','files','LICENSE'])await cp(`${src}/${file}`,`dist/assets/fonts/${name}/${file}`,{recursive:true});}
 console.log(`Built ${posts.length} indexed HTML articles at ${site.url}`);

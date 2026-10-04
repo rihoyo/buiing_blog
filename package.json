@@ -10,7 +10,8 @@
     "test:community-ui": "node scripts/community-browser.mjs",
     "test:counter": "node scripts/counter-browser.mjs",
     "test:editor-ui": "node scripts/editor-browser.mjs",
-    "test:editor-features": "node scripts/editor-features-browser.mjs"
+    "test:editor-features": "node scripts/editor-features-browser.mjs",
+    "test:editor-private-table": "node scripts/editor-private-table-browser.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

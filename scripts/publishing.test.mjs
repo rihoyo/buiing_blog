@@ -51,3 +51,8 @@ test('Publisher saves generic link modes, markdown and every cover template; rej
 test('Publisher persists code languages and normalizes common aliases',async()=>{
  for(const [language,expected] of [['html','html'],['sh','bash'],['py','python'],['javascript','javascript'],['bad" onclick="x','plaintext']]){const s=service();assert.equal((await s.call({action:'publish',file:'new-record.json',post:{...post,blocks:[{type:'code',language,text:'<script>hello</script>'}]}})).status,200);const saved=JSON.parse(Buffer.from(s.written.content,'base64'));assert.equal(saved.blocks[0].language,expected);assert.equal(saved.blocks[0].text,'<script>hello</script>')}
 });
+test('Publisher validates visual tables and refuses private content before any GitHub write',async()=>{
+ const s=service();const table={type:'table',header:true,rows:[['A','B'],['<script>','value']]};assert.equal((await s.call({action:'publish',file:post.id+'.json',post:{...post,blocks:[table]}})).status,200);const published=JSON.parse(Buffer.from(s.written.content,'base64'));assert.deepEqual(published.blocks,[table]);assert.doesNotMatch(renderBlock(table),/<script>/);
+ for(const rows of [[],[['a'],['b','c']],[[42]],Array.from({length:31},()=>['x'])]){const bad=service();assert.equal((await bad.call({action:'publish',file:post.id+'.json',post:{...post,blocks:[{...table,rows}]}})).status,400);assert.equal(bad.written,undefined)}
+ const privateService=service();assert.equal((await privateService.call({action:'publish',file:post.id+'.json',post:{...post,visibility:'private'}})).status,400);assert.equal(privateService.written,undefined);assert.equal(privateService.calls,0);
+});

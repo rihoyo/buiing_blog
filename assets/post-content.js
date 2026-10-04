@@ -3,6 +3,7 @@ import {linkDetails,safeLink} from './links.js';
 import {renderMarkdown} from './markdown.js';
 import {escapeHTML as esc,safeImage,youtubeId} from './helpers.js';
 export function renderBlock(b){
+ if(b.type==='table')return `<div class="table-scroll"><table class="post-table">${(b.rows||[]).map((row,i)=>`<${b.header&&i===0?'thead':'tbody'}><tr>${row.map(cell=>`<${b.header&&i===0?'th':'td'}>${esc(cell)}</${b.header&&i===0?'th':'td'}>`).join('')}</tr></${b.header&&i===0?'thead':'tbody'}>`).join('')}</table></div>`;
  if(b.type==='heading')return `<h2>${esc(b.text)}</h2>`;
  if(b.type==='code')return renderCodeBlock(b.text,b.language);
  if(b.type==='image')return safeImage(b.src)?`<figure class="image-figure"><div class="media-image-frame"><img src="${esc(safeImage(b.src))}" alt="${esc(b.alt||'')}" loading="lazy"></div>${b.alt?`<figcaption>${esc(b.alt)}</figcaption>`:''}</figure>`:'';
