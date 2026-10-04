@@ -4,18 +4,14 @@
   "category": "Development",
   "tags": [],
   "date": "2026-10-04",
-  "updatedAt": "2026-10-04T13:03:45.543Z",
-  "revision": "f4f45e74-48d5-4d9e-9de7-cce746c0dc49",
-  "excerpt": "\"test dsdsd 32dq23e\"\n1. dsdl;\nasdasdasd\n아니 하지만 제대로 작동하는 코드가 없다는게 말이나 되는 말이냔 말이냐",
+  "updatedAt": "2026-10-04T13:54:20.617Z",
+  "revision": "0a9bccb4-43db-448e-bf79-30567cff978c",
+  "excerpt": "asdasdasd\n아니 하지만 제대로 작동하는 코드가 없다는게 말이나 되는 말이냔 말이냐",
   "minutes": 1,
-  "art": "terminal",
+  "art": "layers",
   "artLabel": "123",
   "artCaption": "ㅂㅈㄷ",
   "blocks": [
-    {
-      "type": "code",
-      "text": "\"test dsdsd 32dq23e\"\n1. dsdl;"
-    },
     {
       "type": "heading",
       "text": "asdasdasd"
@@ -24,12 +20,6 @@
       "type": "image",
       "src": "https://dkdiuungbqdnidhtusns.supabase.co/storage/v1/object/public/blog-images/ecd1b35e-8b43-4ca7-9564-366e607c7864/63fbf62b-dd65-4879-83c2-ae3af338234a.gif",
       "alt": "이건 또 무슨 소린지 원"
-    },
-    {
-      "type": "youtube",
-      "url": "https://www.youtube.com/watch?v=plN7JMbadRg",
-      "mode": "bookmark",
-      "title": "https://www.youtube.com/watch?v=plN7JMbadRg"
     },
     {
       "type": "code",
