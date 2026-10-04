@@ -4,11 +4,13 @@
   "category": "Development",
   "tags": [],
   "date": "2026-10-04",
-  "updatedAt": "2026-10-04T12:09:20.260Z",
-  "revision": "4e049806-fad1-4450-87e7-f5d8b07578eb",
-  "excerpt": "\"test dsdsd 32dq23e\"\n1. dsdl;\nasdasdasd\nㅁㄴㅇㅁㄴㅇ\nasdasd",
+  "updatedAt": "2026-10-04T13:03:45.543Z",
+  "revision": "f4f45e74-48d5-4d9e-9de7-cce746c0dc49",
+  "excerpt": "\"test dsdsd 32dq23e\"\n1. dsdl;\nasdasdasd\n아니 하지만 제대로 작동하는 코드가 없다는게 말이나 되는 말이냔 말이냐",
   "minutes": 1,
-  "art": "code",
+  "art": "terminal",
+  "artLabel": "123",
+  "artCaption": "ㅂㅈㄷ",
   "blocks": [
     {
       "type": "code",
@@ -24,10 +26,6 @@
       "alt": "이건 또 무슨 소린지 원"
     },
     {
-      "type": "paragraph",
-      "text": "ㅁㄴㅇㅁㄴㅇ"
-    },
-    {
       "type": "youtube",
       "url": "https://www.youtube.com/watch?v=plN7JMbadRg",
       "mode": "bookmark",
@@ -35,7 +33,7 @@
     },
     {
       "type": "code",
-      "text": "asdasd"
+      "text": "아니 하지만 제대로 작동하는 코드가 없다는게 말이나 되는 말이냔 말이냐"
     }
   ]
 }
