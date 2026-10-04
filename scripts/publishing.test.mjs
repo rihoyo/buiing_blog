@@ -38,6 +38,6 @@ test('All YouTube display modes render safely in static and browser articles',()
 });
 
 test('Publisher exposes instant publication only after public snapshot persistence succeeds',async()=>{
- for(const liveReady of [true,false]){const s=service({liveReady});const r=await s.call({action:'publish',file:'new-record.json',post:{...post,art:'layers',artLabel:'CUSTOM',artCaption:'NOTE',coverImage:'https://project.supabase.co/image.gif',coverAlt:'커버'}});assert.equal(r.status,200);assert.equal((await r.json()).live,liveReady);const saved=JSON.parse(Buffer.from(s.written.content,'base64'));assert.equal(saved.art,'layers');assert.equal(saved.artLabel,'CUSTOM');assert.equal(saved.coverAlt,'커버')}
+ for(const liveReady of [true,false]){const s=service({liveReady});const r=await s.call({action:'publish',file:'new-record.json',post:{...post,art:'layers',artCodeText:'React',artTerminalText:'~/blog\n❯ npm run dev',artLabel:'CUSTOM',artCaption:'NOTE',coverImage:'https://project.supabase.co/image.gif',coverAlt:'커버'}});assert.equal(r.status,200);assert.equal((await r.json()).live,liveReady);const saved=JSON.parse(Buffer.from(s.written.content,'base64'));assert.equal(saved.art,'layers');assert.equal(saved.artLabel,'CUSTOM');assert.equal(saved.artCodeText,'React');assert.equal(saved.artTerminalText,'~/blog\n❯ npm run dev');assert.equal(saved.coverAlt,'커버')}
  const bad=service();assert.equal((await bad.call({action:'publish',file:'new-record.json',post:{...post,coverImage:'javascript:alert(1)'}})).status,400);assert.equal(bad.written,undefined);
 });

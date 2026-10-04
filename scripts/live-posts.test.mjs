@@ -25,3 +25,9 @@ test('Instant publication allows public reads, restricts writes, and prevents sn
  await db.exec("reset role;set role authenticated;select set_config('test.admin','no',false)");await assert.rejects(()=>db.query('insert into public.published_posts(id,source_file,post) values($1,$2,$3)',['other','other.json',JSON.stringify({id:'other'})]),/row-level security/);assert.equal((await db.exec("update public.published_posts set source_file='bad.json'"))[0].affectedRows,0);
  }finally{await db.close()}
 });
+
+test('Code and terminal centers render editable text safely and preserve default designs',()=>{
+ assert.ok(renderCover({art:'code'}).includes('<svg'));
+ const code=renderCover({art:'code',artCodeText:'React <script>'});assert.ok(code.includes('React &lt;script&gt;'));assert.ok(!code.includes('<svg'));assert.ok(!code.includes('<script>'));
+ const terminal=renderCover({art:'terminal',artTerminalText:'~/my-blog\n❯ npm run build\n완료 <img onerror=x>'});assert.ok(terminal.includes('~/my-blog'));assert.ok(terminal.includes('❯ npm run build'));assert.ok(terminal.includes('완료 &lt;img onerror=x&gt;'));assert.ok(!terminal.includes('<img'));assert.ok(!terminal.includes('git add'));
+});
