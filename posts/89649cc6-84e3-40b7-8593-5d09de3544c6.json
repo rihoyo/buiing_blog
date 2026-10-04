@@ -4,8 +4,8 @@
   "category": "Development",
   "tags": [],
   "date": "2026-10-04",
-  "updatedAt": "2026-10-04T13:54:20.617Z",
-  "revision": "0a9bccb4-43db-448e-bf79-30567cff978c",
+  "updatedAt": "2026-10-04T13:55:08.012Z",
+  "revision": "fb3be605-268a-471a-84a9-2aa367c89d8e",
   "excerpt": "asdasdasd\n아니 하지만 제대로 작동하는 코드가 없다는게 말이나 되는 말이냔 말이냐",
   "minutes": 1,
   "art": "layers",
@@ -20,6 +20,12 @@
       "type": "image",
       "src": "https://dkdiuungbqdnidhtusns.supabase.co/storage/v1/object/public/blog-images/ecd1b35e-8b43-4ca7-9564-366e607c7864/63fbf62b-dd65-4879-83c2-ae3af338234a.gif",
       "alt": "이건 또 무슨 소린지 원"
+    },
+    {
+      "type": "youtube",
+      "url": "https://www.youtube.com/watch?v=u7QzgQnYYUc",
+      "mode": "embed",
+      "title": "video.wixstatic.com"
     },
     {
       "type": "code",
