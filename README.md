@@ -1,3 +1,5 @@
+최신 커뮤니티 수정(수정·삭제 비밀번호, 승인제, 통계·로그)은 [COMMUNITY-UPGRADE-SETUP.md](COMMUNITY-UPGRADE-SETUP.md)의 SQL과 함수 업데이트를 적용하세요.
+
 링크·블록 드래그·마크다운·12종 썸네일 사용과 기존 게시 함수 업데이트는 [EDITOR-UPGRADE.md](EDITOR-UPGRADE.md), 커뮤니티/WAF 보호 범위는 [SECURITY.md](SECURITY.md)를 확인하세요.
 
 기존 게시 연결의 속도 개선과 썸네일 편집 설치는 [INSTANT-PUBLISHING-SETUP.md](INSTANT-PUBLISHING-SETUP.md)를 확인하세요.

@@ -5,7 +5,7 @@ import {transformSync} from 'esbuild';
 import vm from 'node:vm';
 import {renderBlock} from '../assets/post-content.js';
 const src=transformSync(await readFile('supabase/functions/publish-post/index.ts','utf8'),{loader:'ts'}).code;
-function service({admin=true,signedIn=true,old=null,token=true,liveReady=true,stageReady=true,removalFails=false,ownerRecord=null}={}){
+function service({admin=true,signedIn=true,old=null,token=true,liveReady=true,stageReady=true,removalFails=false,ownerRecord=null,blocked=false}={}){
  let handler,written,githubCalls=0;
  const fetch=async(url,opts={})=>{
   if(url.endsWith('/auth/v1/user'))return Response.json({id:'owner'},{status:signedIn?200:401});
@@ -13,7 +13,7 @@ function service({admin=true,signedIn=true,old=null,token=true,liveReady=true,st
   if(url.endsWith('/rpc/stage_public_to_private'))return stageReady?Response.json(JSON.parse(opts.body).p_post.revision):Response.json({message:'missing migration'},{status:404});
   if(url.endsWith('/rpc/finish_owner_transition'))return Response.json(true);
   if(url.includes('/rest/v1/owner_posts?'))return Response.json(ownerRecord?[{post:ownerRecord}]:[]);
-  if(url.endsWith('/rpc/sync_published_post'))return liveReady?Response.json(true):Response.json({error:'missing migration'},{status:404});
+  if(url.endsWith('/rpc/validate_blog_words'))return blocked?Response.json({message:'BLOCKED_WORD'},{status:400}):Response.json(true);if(url.endsWith('/rpc/sync_published_post'))return liveReady?Response.json(true):Response.json({error:'missing migration'},{status:404});
   githubCalls++;
   if(opts.method==='PUT'){written=JSON.parse(opts.body);if(removalFails)return Response.json({},{status:503});return Response.json({content:{sha:'new-sha'}})}
   return old?Response.json({sha:'old-sha',content:Buffer.from(JSON.stringify(old)).toString('base64')}):Response.json({},{status:404});
@@ -69,3 +69,5 @@ test('Public-to-private conversion writes only a tombstone to GitHub, and report
  const retry=service({old:post,ownerRecord:{...secret,publicSourceFile:post.id+'.json'}});assert.equal((await(await retry.call({action:'finish-private',file:post.id+'.json',privateId:post.id})).json()).removalPending,false);
  const withdrawn=service({old:{id:post.id,visibility:'withdrawn'}});assert.equal((await withdrawn.call({action:'publish',file:post.id+'.json',sha:'old-sha',post})).status,409);assert.equal(withdrawn.written,undefined);
 });
+
+test('Publisher refuses blocked content before any GitHub write',async()=>{const s=service({blocked:true});const response=await s.call({action:'publish',post,file:post.id+'.json'});assert.equal(response.status,400);assert.equal((await response.json()).error,'BLOCKED_WORD');assert.equal(s.written,undefined)});
