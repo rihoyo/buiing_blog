@@ -1,3 +1,4 @@
+import {modifiedDate} from './assets/community-date.js';
 import {mountGuestSection} from './assets/guest-community.js';
 import {mountTokenInput} from './assets/token-input.js';
 import {loadPrivatePost,resolvePrivateImages} from './assets/private-posts.js';
@@ -8,8 +9,8 @@ import {createClient} from '@supabase/supabase-js';
 import {escapeHTML as esc} from './assets/helpers.js';
 let client,user,admin=false,identityVersion=0;let initPromise;let refresh=()=>{};let loginMethods=['google'];
 const $=s=>document.querySelector(s);
-const messages={LOGIN_REQUIRED:'로그인한 후 작성할 수 있습니다.',ACCOUNT_BANNED:'작성 권한이 제한된 계정입니다.',RATE_LIMIT:'연속 등록을 제한하고 있습니다. 30초 후 다시 시도하세요.',BLOCKED_WORD:'닉네임·제목 또는 본문에 허용되지 않는 문자가 포함되어 있습니다.',INVALID_CONTENT:'입력 길이와 내용을 확인하세요.',FORBIDDEN:'이 작업을 수행할 권한이 없습니다.',ADMIN_CANNOT_BE_BANNED:'관리자 계정은 차단할 수 없습니다.',INVALID_WORD:'금칙어는 1~40자, 최대 100개입니다. ＊ 문자는 사용할 수 없습니다.',THREAD_NOT_FOUND:'삭제되었거나 존재하지 않는 글입니다.',VERIFIED_EMAIL_REQUIRED:'계정의 이메일 인증을 먼저 완료해 주세요.'};
-function errorText(e){return Object.entries(messages).find(([key])=>String(e?.message).includes(key))?.[1]||'요청을 처리하지 못했습니다. 연결과 입력 내용을 확인하고 다시 시도하세요.'}
+const messages={LOGIN_REQUIRED:'로그인한 후 작성할 수 있습니다.',ACCOUNT_BANNED:'작성 권한이 제한된 계정입니다.',RATE_LIMIT:'연속 요청을 제한하고 있습니다. 잠시 후 다시 시도하세요.',BLOCKED_WORD:'닉네임·제목 또는 본문에 허용되지 않는 문자가 포함되어 있습니다.',INVALID_CONTENT:'입력 길이와 내용을 확인하세요.',FORBIDDEN:'이 작업을 수행할 권한이 없습니다.',ADMIN_CANNOT_BE_BANNED:'관리자 계정은 차단할 수 없습니다.',INVALID_WORD:'금칙어는 1~40자, 최대 100개입니다. ＊ 문자는 사용할 수 없습니다.',THREAD_NOT_FOUND:'삭제되었거나 존재하지 않는 글입니다.',VERIFIED_EMAIL_REQUIRED:'계정의 이메일 인증을 먼저 완료해 주세요.'};
+function errorText(e){if(e?.code==='PGRST202'&&String(e.message).includes('edit_entry'))return '회원 글 수정 연결이 필요합니다. 운영자는 community-editing.sql을 실행해 주세요.';return Object.entries(messages).find(([key])=>String(e?.message).includes(key))?.[1]||'요청을 처리하지 못했습니다. 연결과 입력 내용을 확인하고 다시 시도하세요.'}
 const displayName=()=>user?.user_metadata?.display_name||user?.user_metadata?.user_name||user?.user_metadata?.full_name||'회원';
 function clearAdminUI(){document.querySelectorAll('[data-admin-private],#editor-dialog').forEach(n=>n.remove());}
 let lastIdentity='';
@@ -39,7 +40,7 @@ async function init(){
       const changed=user?.id!==session?.user?.id;
       user=session?.user;
       if(event==='INITIAL_SESSION')return;
-      if(changed||event==='SIGNED_OUT'){identityVersion++;admin=false;syncHeader();}
+      if(changed||event==='SIGNED_OUT'){$('#member-edit-dialog')?.remove();identityVersion++;admin=false;syncHeader();}
       // Do not await Supabase calls inside its auth callback.
       if(changed||['SIGNED_OUT','TOKEN_REFRESHED','USER_UPDATED'].includes(event)){
         setTimeout(async()=>{try{const wasAdmin=admin;await readRole();if(!$('#auth-dialog')?.open&&(changed||event==='SIGNED_OUT'||wasAdmin!==admin))await refresh();}catch{admin=false;syncHeader();}},0);
@@ -53,7 +54,7 @@ export async function initializeIdentity(){try{await init();syncHeader()}catch{s
 async function requireAdminAccess(){try{return await init()&&await readRole()}catch{admin=false;syncHeader();return false}}
 async function signOut(){
   // Clear private screen content immediately, including an open editor.
-  identityVersion++;admin=false;syncHeader();
+  identityVersion++;admin=false;$('#member-edit-dialog')?.remove();syncHeader();
   const {error}=await client.auth.signOut();
   if(error){alert('로그아웃을 완료하지 못했습니다. 다시 시도해 주세요.');await refresh();return;}
   user=null;syncHeader();await refresh();
@@ -81,8 +82,17 @@ let adminRenderVersion=0;
 function unavailable(node){node.innerHTML='<div class="service-notice"><h2>커뮤니티 오픈 준비 중</h2><p>회원 인증과 저장소 연결을 준비하고 있습니다. 연결이 완료되면 글과 댓글을 남길 수 있습니다.</p></div>'}
 async function ready(node){try{if(!await init()){unavailable(node);return false;}return true}catch{node.innerHTML='<p role="alert">커뮤니티 서버에 연결하지 못했습니다. 잠시 후 새로고침해 주세요.</p>';return false}}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data}
-function entry(e,thread=false){return `<article class="visitor-entry" data-entry="${esc(e.id)}"><div class="entry-meta"><strong>${esc(e.author_name)}</strong><time>${esc(date(e.created_at))}</time>${e.deleted_at?'<span class="tag">삭제됨</span>':''}${e.kind==='thread'&&e.moderation_status&&e.moderation_status!=='approved'?`<span class="tag">${e.moderation_status==='pending'?'승인 대기':'승인 거절'}</span>`:''}</div>${thread?`<h3><a href="community/?thread=${encodeURIComponent(e.id)}">${esc(e.title)}</a></h3>`:''}<p class="visitor-body">${esc(e.body)}</p>${user&&(user.id===e.author_id||admin)?`<div class="entry-actions"><button data-delete="${esc(e.id)}">삭제</button>${admin&&user.id!==e.author_id?`<button data-ban="${esc(e.author_id)}">작성자 차단</button>`:''}</div>`:''}</article>`}
-function bindActions(node){node.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{if(!confirm('이 글을 삭제하시겠어요? 게시판 글을 삭제하면 해당 댓글도 함께 숨겨집니다.'))return;try{await rpc('delete_entry',{p_id:b.dataset.delete});await refresh()}catch(e){alert(errorText(e))}});node.querySelectorAll('[data-ban]').forEach(b=>b.onclick=async()=>{const reason=prompt('차단 사유를 입력하세요. 이 계정은 글과 댓글을 새로 작성할 수 없습니다.');if(reason===null)return;try{await rpc('admin_ban',{p_user_id:b.dataset.ban,p_reason:reason,p_banned:true});alert('계정을 차단했습니다. 기존 글은 개별 삭제할 수 있습니다.');await refresh()}catch(e){alert(errorText(e))}})}
+function entry(e,thread=false){return `<article class="visitor-entry" data-entry="${esc(e.id)}"><div class="entry-meta"><strong>${esc(e.author_name)}</strong><time>${esc(date(e.created_at))}</time>${modifiedDate(e.edited_at)?`<time class="edited-label" datetime="${esc(e.edited_at)}">${esc(modifiedDate(e.edited_at))} 수정됨</time>`:''}${e.deleted_at?'<span class="tag">삭제됨</span>':''}${e.kind==='thread'&&e.moderation_status&&e.moderation_status!=='approved'?`<span class="tag">${e.moderation_status==='pending'?'승인 대기':'승인 거절'}</span>`:''}</div>${thread?`<h3><a href="community/?thread=${encodeURIComponent(e.id)}">${esc(e.title)}</a></h3>`:''}<p class="visitor-body">${esc(e.body)}</p>${user&&(user.id===e.author_id||admin)?`<div class="entry-actions">${!e.deleted_at?`<button data-member-edit="${esc(e.id)}">수정</button>`:''}<button data-delete="${esc(e.id)}">삭제</button>${admin&&user.id!==e.author_id?`<button data-ban="${esc(e.author_id)}">작성자 차단</button>`:''}</div>`:''}</article>`}
+function bindActions(node){node.querySelectorAll('[data-member-edit]').forEach(b=>b.onclick=()=>openMemberEditor(b.dataset.memberEdit));node.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{if(!confirm('이 글을 삭제하시겠어요? 게시판 글을 삭제하면 해당 댓글도 함께 숨겨집니다.'))return;try{await rpc('delete_entry',{p_id:b.dataset.delete});await refresh()}catch(e){alert(errorText(e))}});node.querySelectorAll('[data-ban]').forEach(b=>b.onclick=async()=>{const reason=prompt('차단 사유를 입력하세요. 이 계정은 글과 댓글을 새로 작성할 수 없습니다.');if(reason===null)return;try{await rpc('admin_ban',{p_user_id:b.dataset.ban,p_reason:reason,p_banned:true});alert('계정을 차단했습니다. 기존 글은 개별 삭제할 수 있습니다.');await refresh()}catch(e){alert(errorText(e))}})}
+async function openMemberEditor(id){
+ let dialog=$('#member-edit-dialog');if(!dialog){dialog=document.createElement('dialog');dialog.id='member-edit-dialog';document.body.append(dialog)}
+ dialog.innerHTML='<p>수정할 글을 불러오는 중입니다.</p>';if(!dialog.open)dialog.showModal();
+ const identity=identityVersion,uid=user?.id;
+ try{const {data:record,error}=await client.from('entries').select('*').eq('id',id).is('deleted_at',null).maybeSingle();if(error)throw error;if(identity!==identityVersion||uid!==user?.id||!dialog.isConnected)return;if(!record||!(record.author_id===uid||admin))throw Error('FORBIDDEN');if(record.author_id!==uid)dialog.setAttribute('data-admin-private','');else dialog.removeAttribute('data-admin-private');
+ dialog.innerHTML=`<div class="dialog-head"><h2>${record.kind==='thread'?'게시글 수정':'댓글 수정'}</h2><button type="button" class="icon-btn member-edit-close" aria-label="닫기">✕</button></div><form class="stack-form">${record.kind==='thread'?`<label>제목<input name="title" required maxlength="160" value="${esc(record.title)}"></label>`:''}<label>내용<textarea name="body" rows="8" required maxlength="10000">${esc(record.body)}</textarea></label>${record.kind==='thread'&&!admin?'<p class="editor-note">수정된 글은 관리자 승인 후 회원 게시판에 다시 표시됩니다.</p>':''}<button class="black-btn">수정 저장</button><p class="member-edit-status" role="status"></p></form>`;
+ dialog.querySelector('.member-edit-close').onclick=()=>dialog.close();dialog.querySelector('form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{const result=await rpc('edit_entry',{p_id:id,p_title:e.target.elements.title?.value||'',p_body:e.target.elements.body.value});if(identity!==identityVersion||uid!==user?.id)return;dialog.close();dialog.remove();if(result?.pending){location.assign(new URL('community/?board=members',document.baseURI));return}await refresh()}catch(err){if(dialog.isConnected)dialog.querySelector('.member-edit-status').textContent=errorText(err)}finally{if(button.isConnected)button.disabled=false}};
+ }catch(err){if(dialog.isConnected)dialog.innerHTML=`<p role="alert">${esc(errorText(err))}</p><button type="button" class="outline-btn member-edit-close">닫기</button>`;dialog.querySelector('.member-edit-close')?.addEventListener('click',()=>dialog.close())}
+}
 function compose(kind){return user?`<form id="compose-form" class="stack-form compose-form">${kind==='thread'?'<label>제목<input name="title" required maxlength="160" placeholder="함께 나누고 싶은 이야기는?"></label>':''}<label>${kind==='thread'?'내용':'댓글'}<textarea name="body" required maxlength="10000" rows="4" placeholder="서로를 존중하며 이야기를 나눠주세요."></textarea></label><div><button class="black-btn">${kind==='thread'?'승인 요청':'댓글 등록'} ↗</button></div><p role="status" id="compose-status"></p></form>`:'<p class="editor-note">로그인하면 글과 댓글을 작성할 수 있습니다.</p>'}
 function bindCompose(kind,blog=null,thread=null){const f=$('#compose-form');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;try{await rpc('create_entry',{p_kind:kind,p_title:f.elements.title?.value||'',p_body:f.elements.body.value,p_blog_slug:blog,p_thread_id:thread});f.reset();await refresh();if(kind==='thread'&&$('#compose-status'))$('#compose-status').textContent='승인을 요청했습니다. 관리자 승인 후 회원 게시판에 표시됩니다.'}catch(err){$('#compose-status').textContent=errorText(err)}finally{b.disabled=false}}}
 async function listEntries(query){const {data,error}=await query;if(error)throw error;return data}
@@ -99,7 +109,7 @@ export async function mountWrite(){
  await mountBlogEditor({authorize:requireAdminAccess,onDenied:mountWrite,userId:user.id,client,inline:true});
 }
 function mountAdminDashboard(dashboard){
- const labels={recommend:'추천',guest_create:'비회원 등록',thread_submit:'회원 글 제출',member_comment:'회원 댓글',thread_approved:'승인',thread_rejected:'거절',member_delete:'회원 글 삭제',edit:'수정',delete:'삭제',admin_delete:'관리자 삭제',password_rejected:'비밀번호 실패'};
+ const labels={recommend:'추천',guest_create:'비회원 등록',thread_submit:'회원 글 제출',member_edit:'회원 글 수정',member_comment:'회원 댓글',thread_approved:'승인',thread_rejected:'거절',member_delete:'회원 글 삭제',edit:'수정',delete:'삭제',admin_delete:'관리자 삭제',password_rejected:'비밀번호 실패'};
  const pending=$('#approval-list'),stats=$('#community-stats'),logs=$('#activity-list');let before=null;
  if(!dashboard){for(const n of [pending,stats,logs])n.textContent='커뮤니티 업데이트 SQL 적용이 필요합니다.';return}
  stats.innerHTML='<div class="stats-grid">'+Object.entries({threads:'공개 회원 글',pending:'승인 대기',guestbook:'방명록',comments:'비회원 댓글',recommendations:'추천',members:'작성 회원',today:'오늘 활동'}).map(([key,label])=>`<div><span>${label}</span><strong>${Number(dashboard.stats?.[key])||0}</strong></div>`).join('')+'</div>';

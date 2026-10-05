@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {modifiedDate} from '../assets/community-date.js';
+test('Last-edited dates use the Korean calendar day across UTC boundaries',()=>{assert.equal(modifiedDate('2026-10-05T14:59:59Z'),'2026-10-05');assert.equal(modifiedDate('2026-10-05T15:00:00Z'),'2026-10-06');assert.equal(modifiedDate(null),'');assert.equal(modifiedDate('bad-date'),'')});
