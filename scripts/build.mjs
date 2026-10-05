@@ -31,7 +31,7 @@ async function page(path,title,description,body,opts={}){
 await page('',`${site.title} — 배우고, 기록하고, 나누다.`,site.description,renderHome(posts));
 for(const id of withdrawn)await page(`posts/${id}/`,'비공개 글 — BUIING','작성자 인증이 필요합니다.',`<section class="article" data-withdrawn-id="${esc(id)}"><h1>비공개 글</h1><a href="private-post/?id=${encodeURIComponent(id)}">작성자 계정으로 보기</a></section>`,{noindex:true});
 for(const p of posts)await page(`posts/${p.id}/`,`${p.title} — ${site.title}`,p.excerpt,renderArticle(p),{article:p});
-await page('about/','소개 — BUIING','배움을 기록하고 지식을 나누는 개발자 부잉입니다.','<section class="about"><h1>Stay curious.<br>Keep it simple.</h1><p>귀찮은 일을 줄이기 위해 코드를 쓰고, 다시 헤매지 않기 위해 배운 것을 기록합니다.</p></section>');
+await page('about/','소개 — BUIING','배움을 기록하고 지식을 나누는 개발자 븨잉입니다.','<section class="about"><h1>Stay curious.<br>Keep it simple.</h1><p>귀찮은 일을 줄이기 위해 코드를 쓰고, 다시 헤매지 않기 위해 배운 것을 기록합니다.</p></section>');
 await page('community/','커뮤니티 — BUIING','질문과 배움을 나누는 개발자 커뮤니티.','<section class="article"><h1>Community.</h1><p>질문과 배움을 나눠보세요. 게시판을 이용하려면 JavaScript를 활성화해 주세요.</p></section>');
 await page('write/','글쓰기 — BUIING','운영자 전용 블로그 글쓰기.','<section class="write-page"><h1>운영자 인증이 필요합니다.</h1></section>',{noindex:true});
 await page('private-post/','비공개 글 — BUIING','작성자 본인만 읽는 비공개 글.','<section class="article"><h1>작성자 인증이 필요합니다.</h1></section>',{noindex:true});
